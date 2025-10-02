@@ -25,12 +25,12 @@ export class Menu {
         {
           icon: 'assets/icons/heroicons/outline/cog.svg',
           label: 'Settings',
-          route: '/settings',
+          route: '/dashboard/settings',
         },
         {
           icon: 'assets/icons/heroicons/outline/bell.svg',
           label: 'Notifications',
-          route: '/notifications',
+          route: '/dashboard/notifications',
         },
       ],
     },

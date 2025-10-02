@@ -27,61 +27,77 @@ public class RabbitMQConsumerService : IMessageConsumerService
 
     public async Task StartConsumingAsync(CancellationToken cancellationToken)
     {
-        try
+        var maxRetries = 10;
+        var retryDelay = TimeSpan.FromSeconds(5);
+        
+        for (int attempt = 1; attempt <= maxRetries; attempt++)
         {
-            var factory = new ConnectionFactory
+            try
             {
-                HostName = Environment.GetEnvironmentVariable("RabbitMQ__HostName") ?? "localhost",
-                Port = int.Parse(Environment.GetEnvironmentVariable("RabbitMQ__Port") ?? "5672"),
-                UserName = Environment.GetEnvironmentVariable("RabbitMQ__UserName") ?? "guest",
-                Password = Environment.GetEnvironmentVariable("RabbitMQ__Password") ?? "guest"
-            };
-
-            _connection = await factory.CreateConnectionAsync();
-            _channel = await _connection.CreateChannelAsync();
-
-            // Exchange ve Queue setup
-            await _channel.ExchangeDeclareAsync(ExchangeName, ExchangeType.Direct, durable: true);
-            await _channel.QueueDeclareAsync(QueueName, durable: true, exclusive: false, autoDelete: false);
-            
-            // Multiple routing keys bind
-            await _channel.QueueBindAsync(QueueName, ExchangeName, "todo.created");
-            await _channel.QueueBindAsync(QueueName, ExchangeName, "todo.completed");
-            await _channel.QueueBindAsync(QueueName, ExchangeName, "todo.deleted");
-
-            var consumer = new AsyncEventingBasicConsumer(_channel);
-            consumer.ReceivedAsync += async (model, ea) =>
-            {
-                try
+                var factory = new ConnectionFactory
                 {
-                    var body = ea.Body.ToArray();
-                    var message = Encoding.UTF8.GetString(body);
-                    
-                    _logger.LogInformation("Received message: {Message}", message);
-                    
-                    await ProcessMessageAsync(message, ea.RoutingKey);
-                    await _channel.BasicAckAsync(ea.DeliveryTag, false);
-                }
-                catch (Exception ex)
+                    HostName = Environment.GetEnvironmentVariable("RabbitMQ__HostName") ?? "localhost",
+                    Port = int.Parse(Environment.GetEnvironmentVariable("RabbitMQ__Port") ?? "5672"),
+                    UserName = Environment.GetEnvironmentVariable("RabbitMQ__UserName") ?? "guest",
+                    Password = Environment.GetEnvironmentVariable("RabbitMQ__Password") ?? "guest"
+                };
+
+                _logger.LogInformation("Attempting to connect to RabbitMQ (attempt {Attempt}/{MaxAttempts})", attempt, maxRetries);
+                _connection = await factory.CreateConnectionAsync();
+                _channel = await _connection.CreateChannelAsync();
+
+                // Exchange ve Queue setup
+                await _channel.ExchangeDeclareAsync(ExchangeName, ExchangeType.Direct, durable: true);
+                await _channel.QueueDeclareAsync(QueueName, durable: true, exclusive: false, autoDelete: false);
+                
+                // Multiple routing keys bind
+                await _channel.QueueBindAsync(QueueName, ExchangeName, "todo.created");
+                await _channel.QueueBindAsync(QueueName, ExchangeName, "todo.completed");
+                await _channel.QueueBindAsync(QueueName, ExchangeName, "todo.deleted");
+
+                var consumer = new AsyncEventingBasicConsumer(_channel);
+                consumer.ReceivedAsync += async (model, ea) =>
                 {
-                    _logger.LogError(ex, "Error processing message");
-                    await _channel.BasicNackAsync(ea.DeliveryTag, false, true);
+                    try
+                    {
+                        var body = ea.Body.ToArray();
+                        var message = Encoding.UTF8.GetString(body);
+                        
+                        _logger.LogInformation("Received message: {Message}", message);
+                        
+                        await ProcessMessageAsync(message, ea.RoutingKey);
+                        await _channel.BasicAckAsync(ea.DeliveryTag, false);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error processing message");
+                        await _channel.BasicNackAsync(ea.DeliveryTag, false, true);
+                    }
+                };
+
+                await _channel.BasicConsumeAsync(QueueName, false, consumer);
+                
+                _logger.LogInformation("Successfully connected to RabbitMQ. Notification Service started listening...");
+
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await Task.Delay(1000, cancellationToken);
                 }
-            };
-
-            await _channel.BasicConsumeAsync(QueueName, false, consumer);
-            
-            _logger.LogInformation("Notification Service started. Listening to RabbitMQ...");
-
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                await Task.Delay(1000, cancellationToken);
+                return; // Success, exit retry loop
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while connecting to RabbitMQ");
-            throw;
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to connect to RabbitMQ on attempt {Attempt}/{MaxAttempts}", attempt, maxRetries);
+                
+                if (attempt == maxRetries)
+                {
+                    _logger.LogError(ex, "Failed to connect to RabbitMQ after {MaxAttempts} attempts", maxRetries);
+                    throw;
+                }
+                
+                _logger.LogInformation("Retrying in {Delay} seconds...", retryDelay.TotalSeconds);
+                await Task.Delay(retryDelay, cancellationToken);
+            }
         }
     }
 

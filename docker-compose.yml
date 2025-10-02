@@ -27,6 +27,11 @@ services:
       - rabbitmq-data:/var/lib/rabbitmq
     networks:
       - tasky-network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   # Auth Service
   auth-service:
@@ -69,7 +74,9 @@ services:
       dockerfile: Tasky.NotificationService/Dockerfile
     environment:
       - RabbitMQ__HostName=rabbitmq
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=TaskyNotificationDb;User Id=sa;Password=reallyStrongPassword1!;Encrypt=False;TrustServerCertificate=True
     depends_on:
+      - sqlserver
       - rabbitmq
     networks:
       - tasky-network

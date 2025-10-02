@@ -10,4 +10,5 @@ public interface IAuthService
     Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request);
     Task<bool> ResetPasswordAsync(ResetPasswordRequest request);
     Task<bool> UpdateUserAvatarAsync(string email, string avatarUrl);
+    Task<UserResponse?> GetUserByIdAsync(Guid userId);
 }

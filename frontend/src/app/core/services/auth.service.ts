@@ -1,8 +1,7 @@
 // src/app/core/services/auth.service.ts
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { Observable, BehaviorSubject, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { LoginRequest, RegisterRequest, AuthResponse, AppUser } from '../models/auth.model';
@@ -15,13 +14,13 @@ export class AuthService {
   private readonly TOKEN_KEY = 'auth_token';
   private readonly USER_KEY = 'user_data';
 
+  private currentUserSubject = new BehaviorSubject<AppUser | null>(this.getUserData());
+  public currentUser$ = this.currentUserSubject.asObservable();
+
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.hasToken());
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
-  constructor(
-    private http: HttpClient,
-    private router: Router
-  ) {}
+  constructor(private http: HttpClient, private router: Router) {}
 
   login(loginData: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.API_URL}/login`, loginData)
@@ -30,6 +29,13 @@ export class AuthService {
           this.setAuthData(response);
         })
       );
+  }
+
+  logout(): void {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
+    this.isAuthenticatedSubject.next(false);
+    this.router.navigate(['/auth/sign-in']);
   }
 
   register(registerData: RegisterRequest): Observable<boolean> {
@@ -48,18 +54,13 @@ export class AuthService {
     });
   }
 
-  logout(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.USER_KEY);
-    this.isAuthenticatedSubject.next(false);
-    this.router.navigate(['/auth/sign-in']);
-  }
+  
 
   isAuthenticated(): boolean {
     const hasToken = this.hasToken();
     const tokenValid = !this.isTokenExpired();
     const isAuth = hasToken && tokenValid;
-    
+        
     return isAuth;
   }
 
@@ -77,31 +78,34 @@ export class AuthService {
     if (currentUser) {
       const updatedUser: AppUser = { ...currentUser, ...userData };
       localStorage.setItem(this.USER_KEY, JSON.stringify(updatedUser));
+      this.currentUserSubject.next(updatedUser); // Değişikliği yayınla
     }
   }
 
-  uploadAvatar(file: File): Observable<any> {
+  uploadAvatar(file: File): Observable<AppUser> {
     const formData = new FormData();
     formData.append('file', file);
     
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${this.getToken()}`
-    });
-
-    return this.http.post(`${this.API_URL}/upload-avatar`, formData, { headers });
+    // Backend'den dönen güncel kullanıcı bilgisini yakala ve güncelle
+    return this.http.post<AppUser>(`${this.API_URL}/upload-avatar`, formData).pipe(
+      tap(updatedUser => {
+        this.updateUserData(updatedUser); // Kullanıcı verisini güncelle ve yayınla
+      })
+    );
   }
 
   private setAuthData(authResponse: AuthResponse): void {
     const appUser: AppUser = {
       username: authResponse.username,
       email: authResponse.email,
-      fullname: authResponse.fullname,
-      avatarUrl: undefined
+      fullName: authResponse.fullName,
+      avatarUrl: authResponse.avatarUrl // Backend'den avatarUrl geliyorsa ekleyin
     };
     
     localStorage.setItem(this.TOKEN_KEY, authResponse.token);
     localStorage.setItem(this.USER_KEY, JSON.stringify(appUser));
     this.isAuthenticatedSubject.next(true);
+    this.currentUserSubject.next(appUser); // Yeni kullanıcıyı yayınla
   }
 
   private hasToken(): boolean {

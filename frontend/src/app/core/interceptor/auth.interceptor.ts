@@ -1,4 +1,3 @@
-
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
@@ -8,22 +7,35 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const token = authService.getToken();
   
-  // Skip auth header for login and register endpoints
   const skipAuth = req.url.includes('/auth/login') || req.url.includes('/auth/register');
   
-  if (token && !skipAuth) {
-    req = req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-  } else if (!skipAuth) {
-    req = req.clone({
-      setHeaders: {
-        'Content-Type': 'application/json'
-      }
-    });
+  // Eğer istek gövdesi FormData ise, Content-Type'a dokunma.
+  if (req.body instanceof FormData) {
+    if (token && !skipAuth) {
+      // Sadece Authorization başlığını ekle.
+      req = req.clone({
+        setHeaders: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+    }
+  } 
+  // Diğer tüm istekler için eski mantığı kullan.
+  else {
+    if (token && !skipAuth) {
+      req = req.clone({
+        setHeaders: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    } else if (!skipAuth) {
+      req = req.clone({
+        setHeaders: {
+          'Content-Type': 'application/json'
+        }
+      });
+    }
   }
 
   return next(req).pipe(

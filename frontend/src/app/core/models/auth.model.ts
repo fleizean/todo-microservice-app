@@ -4,7 +4,7 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
-  fullname: string;
+  fullName: string;
   username: string;
   email: string;
   password: string;
@@ -14,14 +14,15 @@ export interface AuthResponse {
   token: string;
   username: string;
   email: string;
-  fullname: string;
+  fullName: string;
+  avatarUrl?: string;
 }
 
 export interface AppUser {
   id?: string;
   username: string;
   email: string;
-  fullname: string;
+  fullName: string;
   avatarUrl?: string;
   createdAt?: Date;
 }

@@ -14,17 +14,22 @@ public class UserRepository : IUserRepository
         _context = context;
     }
 
-    public async Task<User?> GetByEmailAsync(string email)
+    public async Task<AppUser?> GetByIdAsync(Guid id)
+    {
+        return await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+    }
+
+    public async Task<AppUser?> GetByEmailAsync(string email)
     {
         return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
     }
 
-    public async Task<User?> GetByUsernameAsync(string username)
+    public async Task<AppUser?> GetByUsernameAsync(string username)
     {
-        return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+        return await _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
     }
 
-    public async Task<User> CreateAsync(User user)
+    public async Task<AppUser> CreateAsync(AppUser user)
     {
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
@@ -38,16 +43,16 @@ public class UserRepository : IUserRepository
 
     public async Task<bool> ExistsByUsernameAsync(string username)
     {
-        return await _context.Users.AnyAsync(u => u.Username == username);
+        return await _context.Users.AnyAsync(u => u.UserName == username);
     }
 
-    public async Task UpdateAsync(User user)
+    public async Task UpdateAsync(AppUser user)
     {
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
     }
 
-    public async Task<User?> GetByPasswordResetTokenAsync(string token)
+    public async Task<AppUser?> GetByPasswordResetTokenAsync(string token)
     {
         return await _context.Users.FirstOrDefaultAsync(u => 
             u.PasswordResetToken == token && 

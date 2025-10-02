@@ -28,20 +28,21 @@ export class SignInComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Form'u her zaman initialize et
+    this.form = this._formBuilder.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+    });
+
     // Zaten giriş yapmışsa dashboard'a yönlendir
     if (this.authService.isAuthenticated()) {
       this._router.navigate(['/dashboard/todos']);
       return;
     }
-
-    this.form = this._formBuilder.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-    });
   }
 
   get f() {
-    return this.form.controls;
+    return this.form?.controls || {};
   }
 
   togglePasswordTextType() {
@@ -52,8 +53,7 @@ export class SignInComponent implements OnInit {
     this.submitted = true;
     this.errorMessage = '';
 
-
-    if (this.form.invalid) {
+    if (!this.form || this.form.invalid) {
       return;
     }
 
@@ -67,6 +67,8 @@ export class SignInComponent implements OnInit {
 
     this.authService.login(loginData).subscribe({
       next: (response) => {
+        console.log('Login successful, response:', response);
+        console.log('isAuthenticated after login:', this.authService.isAuthenticated());
         this._router.navigate(['/dashboard/todos']);
       },
       error: (error) => {

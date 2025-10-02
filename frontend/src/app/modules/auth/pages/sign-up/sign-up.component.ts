@@ -40,12 +40,16 @@ export class SignUpComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    if (this.authService.isAuthenticated()) {
+    // Form'u her zaman initialize et
+    this.initForm();
+
+    // Zaten giriş yapmışsa dashboard'a yönlendir
+    const isAuth = this.authService.isAuthenticated();
+    console.log('Sign-up: isAuthenticated =', isAuth);
+    if (isAuth) {
       this.router.navigate(['/dashboard/todos']);
       return;
     }
-
-    this.initForm();
   }
 
   private initForm(): void {
@@ -78,6 +82,7 @@ export class SignUpComponent implements OnInit {
   }
 
   getPasswordStrength(): number {
+    if (!this.signUpForm) return 0;
     const password = this.signUpForm.get('password')?.value || '';
     let strength = 0;
     
@@ -94,7 +99,7 @@ export class SignUpComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
 
-    if (this.signUpForm.invalid) {
+    if (!this.signUpForm || this.signUpForm.invalid) {
       this.markFormGroupTouched();
       this.errorMessage = 'Lütfen tüm alanları doğru şekilde doldurun.';
       return;
@@ -103,7 +108,7 @@ export class SignUpComponent implements OnInit {
     this.isLoading = true;
 
     const registerData: RegisterRequest = {
-      fullname: this.signUpForm.value.fullname,
+      fullName: this.signUpForm.value.fullname,
       username: this.signUpForm.value.username,
       email: this.signUpForm.value.email,
       password: this.signUpForm.value.password
@@ -137,6 +142,7 @@ export class SignUpComponent implements OnInit {
   }
 
   private markFormGroupTouched(): void {
+    if (!this.signUpForm) return;
     Object.keys(this.signUpForm.controls).forEach(key => {
       const control = this.signUpForm.get(key);
       control?.markAsTouched();
@@ -144,11 +150,13 @@ export class SignUpComponent implements OnInit {
   }
 
   isFieldInvalid(fieldName: string): boolean {
+    if (!this.signUpForm) return false;
     const field = this.signUpForm.get(fieldName);
     return !!(field && field.invalid && field.touched);
   }
 
   getFieldError(fieldName: string): string {
+    if (!this.signUpForm) return '';
     const field = this.signUpForm.get(fieldName);
     if (field?.errors) {
       if (field.errors['required']) return `Bu alan gereklidir`;

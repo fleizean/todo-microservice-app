@@ -9,7 +9,7 @@ namespace Tasky.AuthService.Infrastructure.Services;
 
 public interface IJwtTokenGenerator
 {
-    string GenerateToken(User user);
+    string GenerateToken(AppUser user);
 }
 
 public class JwtTokenGenerator : IJwtTokenGenerator
@@ -21,7 +21,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         _configuration = configuration;
     }
 
-    public string GenerateToken(User user)
+    public string GenerateToken(AppUser user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(_configuration["JwtSettings:SecretKey"]!);
@@ -29,8 +29,8 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new("username", user.Username),
-            new("email", user.Email)
+            new("username", user.UserName ?? string.Empty),
+            new("email", user.Email ?? string.Empty)
         };
 
         var tokenDescriptor = new SecurityTokenDescriptor

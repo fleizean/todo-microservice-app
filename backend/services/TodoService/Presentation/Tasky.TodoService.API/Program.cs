@@ -7,11 +7,17 @@ using Tasky.TodoService.Application.Services;
 using Tasky.TodoService.Infrastructure.Services;
 using Tasky.TodoService.Persistence.Context;
 using Tasky.TodoService.Persistence.Repositories;
+using System.Text.Json.Serialization; // Bu satırı ekleyin
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -50,9 +56,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// HttpClient for AuthService
+builder.Services.AddHttpClient("AuthService", client =>
+{
+    var authServiceUrl = builder.Configuration["Services:AuthService:BaseUrl"] ?? 
+        throw new InvalidOperationException("AuthService URL is required");
+    client.BaseAddress = new Uri(authServiceUrl);
+});
+
 // Services
 builder.Services.AddScoped<ITodoRepository, TodoRepository>();
 builder.Services.AddScoped<ITodoService, TodoServiceImpl>();
+builder.Services.AddScoped<IReminderService, ReminderService>();
 builder.Services.AddSingleton<IEventService>(provider =>
     new RabbitMQEventService(builder.Configuration.GetConnectionString("RabbitMQ") ?? 
         throw new InvalidOperationException("RabbitMQ connection string is required")));
@@ -71,5 +86,20 @@ app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Apply pending migrations automatically
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
+    try
+    {
+        context.Database.Migrate();
+        Console.WriteLine("Migrations applied successfully for TodoService.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error applying migrations: {ex.Message}");
+    }
+}
 
 app.Run();

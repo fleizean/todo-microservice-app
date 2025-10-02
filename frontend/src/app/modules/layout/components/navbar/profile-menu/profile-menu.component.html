@@ -1,23 +1,37 @@
 <div class="relative ml-3">
   <!-- Profile Button -->
-  <button (click)="toggleMenu()" class="bg-card relative flex rounded-full text-sm" type="button">
+  <button (click)="toggleMenu($event)" class="bg-card relative flex rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary" type="button">
     <span class="sr-only">Open user menu</span>
-    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-      <span class="text-sm font-medium">{{ getUserInitial() }}</span>
-    </div>
-  </button>
-  
-  <!-- Dropdown -->
-  <div
-    *ngIf="isOpen"
-    [@openClose]="isOpen ? 'open' : 'closed'"
-    appClickOutside
-    (clickOutside)="isOpen = false"
-    class="bg-background shadow-custom border-muted absolute z-20 mt-2 w-60 origin-top-right transform rounded-md border border-dashed py-4 ring-1 ring-transparent ring-opacity-5 transition focus:outline-hidden ltr:right-0 rtl:left-0">
-    <div class="flext-row flex items-center px-4 pb-4">
+    <!-- Avatar veya Baş Harf -->
+    <!-- DEĞİŞİKLİK BURADA: user nesnesini kontrol et -->
+    <ng-container *ngIf="user && user.avatarUrl; else initial">
+      <img class="h-8 w-8 rounded-full object-cover" [src]="user.avatarUrl" alt="User Avatar">
+    </ng-container>
+    <ng-template #initial>
       <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
         <span class="text-sm font-medium">{{ getUserInitial() }}</span>
       </div>
+    </ng-template>
+  </button>
+  
+  
+  <!-- Dropdown -->
+  <div
+  *ngIf="isOpen"
+  [@openClose]
+  appClickOutside
+  (clickOutside)="closeMenu()"
+  class="profile-dropdown bg-background shadow-custom border-muted absolute z-20 mt-2 w-60 origin-top-right transform rounded-md border border-dashed py-4 ring-1 ring-transparent ring-opacity-5 transition focus:outline-hidden ltr:right-0 rtl:left-0">
+    <div class="flext-row flex items-center px-4 pb-4">
+      <!-- DEĞİŞİKLİK BURADA: user nesnesini kontrol et -->
+      <ng-container *ngIf="user && user.avatarUrl; else initialDropdown">
+        <img class="h-8 w-8 rounded-full object-cover" [src]="user.avatarUrl" alt="User Avatar">
+      </ng-container>
+      <ng-template #initialDropdown>
+        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <span class="text-sm font-medium">{{ getUserInitial() }}</span>
+        </div>
+      </ng-template>
       <div class="text-foreground overflow-hidden px-2 text-sm font-semibold">
         {{ user?.username || 'User' }}
         <p class="text-muted-foreground truncate text-ellipsis text-xs font-semibold">{{ user?.email || 'user@example.com' }}</p>

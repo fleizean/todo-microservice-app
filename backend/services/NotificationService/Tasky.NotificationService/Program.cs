@@ -1,15 +1,22 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tasky.NotificationService.Application.Repositories;
 using Tasky.NotificationService.Application.Services;
+using Tasky.NotificationService.Infrastructure.Data;
 using Tasky.NotificationService.Infrastructure.Repositories;
 using Tasky.NotificationService.Infrastructure.Services;
 
 var host = Host.CreateDefaultBuilder(args)
-    .ConfigureServices(services =>
+    .ConfigureServices((context, services) =>
     {
+        // Database
+        services.AddDbContext<NotificationDbContext>(options =>
+            options.UseSqlServer(context.Configuration.GetConnectionString("DefaultConnection")));
+        
         // Repositories
-        services.AddSingleton<INotificationRepository, NotificationRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
         
         // Application Services
         services.AddScoped<INotificationService, NotificationServiceImpl>();
@@ -19,6 +26,21 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddHostedService<NotificationHostedService>();
     })
     .Build();
+
+// Apply pending migrations automatically
+using (var scope = host.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
+    try
+    {
+        context.Database.Migrate();
+        Console.WriteLine("Migrations applied successfully for NotificationService.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error applying migrations: {ex.Message}");
+    }
+}
 
 await host.RunAsync();
 

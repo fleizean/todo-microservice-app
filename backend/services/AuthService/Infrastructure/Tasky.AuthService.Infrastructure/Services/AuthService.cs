@@ -1,30 +1,42 @@
-using BCrypt.Net;
+using Microsoft.AspNetCore.Identity;
 using Tasky.AuthService.Application.Abstractions.Services;
 using Tasky.AuthService.Application.DTOs.Requests;
 using Tasky.AuthService.Application.DTOs.Responses;
-using Tasky.AuthService.Application.Repositories;
 using Tasky.AuthService.Domain.Entities;
 
 namespace Tasky.AuthService.Infrastructure.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly IUserRepository _userRepository;
+    private readonly UserManager<AppUser> _userManager;
+    private readonly SignInManager<AppUser> _signInManager;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IEmailService _emailService;
 
-    public AuthService(IUserRepository userRepository, IJwtTokenGenerator jwtTokenGenerator, IEmailService emailService)
+    public AuthService(
+        UserManager<AppUser> userManager, 
+        SignInManager<AppUser> signInManager,
+        IJwtTokenGenerator jwtTokenGenerator, 
+        IEmailService emailService)
     {
-        _userRepository = userRepository;
+        _userManager = userManager;
+        _signInManager = signInManager;
         _jwtTokenGenerator = jwtTokenGenerator;
         _emailService = emailService;
     }
 
     public async Task<LoginResponse> LoginAsync(LoginRequest request)
     {
-        var user = await _userRepository.GetByEmailAsync(request.Email);
+        var user = await _userManager.FindByEmailAsync(request.Email);
         
-        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        if (user == null)
+        {
+            throw new UnauthorizedAccessException("Invalid email or password");
+        }
+
+        var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
+        
+        if (!result.Succeeded)
         {
             throw new UnauthorizedAccessException("Invalid email or password");
         }
@@ -34,81 +46,107 @@ public class AuthService : IAuthService
         return new LoginResponse
         {
             Token = token,
-            Username = user.Username,
-            Email = user.Email,
+            Username = user.UserName ?? string.Empty,
+            Email = user.Email ?? string.Empty,
             FullName = user.FullName
         };
     }
 
     public async Task<bool> RegisterAsync(RegisterRequest request)
     {
-        if (await _userRepository.ExistsByEmailAsync(request.Email))
+        var existingUserByEmail = await _userManager.FindByEmailAsync(request.Email);
+        if (existingUserByEmail != null)
         {
             throw new ArgumentException("Email already exists");
         }
 
-        if (await _userRepository.ExistsByUsernameAsync(request.Username))
+        var existingUserByUsername = await _userManager.FindByNameAsync(request.Username);
+        if (existingUserByUsername != null)
         {
             throw new ArgumentException("Username already exists");
         }
 
-        var user = new User
+        var user = new AppUser
         {
             FullName = request.FullName,
-            Username = request.Username,
+            UserName = request.Username,
             Email = request.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             CreatedAt = DateTime.UtcNow
         };
 
-        await _userRepository.CreateAsync(user);
+        var result = await _userManager.CreateAsync(user, request.Password);
+        
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new ArgumentException($"Registration failed: {errors}");
+        }
+
         return true;
     }
 
     public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request)
     {
-        var user = await _userRepository.GetByEmailAsync(request.Email);
+        var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null)
         {
             return true;
         }
 
-        var resetToken = Guid.NewGuid().ToString();
-        user.PasswordResetToken = resetToken;
-        user.PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(1);
-
-        await _userRepository.UpdateAsync(user);
-        await _emailService.SendPasswordResetEmailAsync(user.Email, resetToken);
+        var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+        await _emailService.SendPasswordResetEmailAsync(user.Email!, resetToken);
 
         return true;
     }
 
     public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request)
     {
-        var user = await _userRepository.GetByPasswordResetTokenAsync(request.Token);
-        if (user == null || user.Email != request.Email)
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user == null)
         {
             throw new ArgumentException("Invalid or expired reset token");
         }
 
-        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-        user.PasswordResetToken = null;
-        user.PasswordResetTokenExpiry = null;
+        var result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+        
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new ArgumentException($"Password reset failed: {errors}");
+        }
 
-        await _userRepository.UpdateAsync(user);
         return true;
     }
 
     public async Task<bool> UpdateUserAvatarAsync(string email, string avatarUrl)
     {
-        var user = await _userRepository.GetByEmailAsync(email);
+        var user = await _userManager.FindByEmailAsync(email);
         if (user == null)
         {
             return false;
         }
 
         user.AvatarUrl = avatarUrl;
-        await _userRepository.UpdateAsync(user);
-        return true;
+        var result = await _userManager.UpdateAsync(user);
+        return result.Succeeded;
+    }
+
+    public async Task<UserResponse?> GetUserByIdAsync(Guid userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+        {
+            return null;
+        }
+
+        return new UserResponse
+        {
+            Id = user.Id.ToString(),
+            Username = user.UserName ?? string.Empty,
+            Email = user.Email ?? string.Empty,
+            FullName = user.FullName,
+            AvatarUrl = user.AvatarUrl,
+            CreatedAt = user.CreatedAt
+        };
     }
 }

@@ -124,9 +124,10 @@ public class AuthController : ControllerBase
         }
     }
 
-    [HttpPost("upload-avatar")]
+       [HttpPost("upload-avatar")]
     [Authorize]
-    public async Task<IActionResult> UploadAvatar(IFormFile file)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadAvatar([FromForm] IFormFile file)
     {
         try
         {
@@ -134,47 +135,79 @@ public class AuthController : ControllerBase
             {
                 return BadRequest(new { message = "No file uploaded" });
             }
-
+    
             // Validate file type
             var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif" };
             if (!allowedTypes.Contains(file.ContentType.ToLower()))
             {
                 return BadRequest(new { message = "Only image files (JPEG, PNG, GIF) are allowed" });
             }
-
+    
             // Validate file size (max 5MB)
             if (file.Length > 5 * 1024 * 1024)
             {
                 return BadRequest(new { message = "File size cannot exceed 5MB" });
             }
-
+    
             // Get user email from JWT token
             var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(userEmail))
             {
                 return Unauthorized(new { message = "Invalid token" });
             }
-
+    
             // Upload to Cloudinary
             string? avatarUrl;
             using (var stream = file.OpenReadStream())
             {
                 avatarUrl = await _cloudinaryService.UploadImageAsync(stream, file.FileName);
             }
-
+    
             if (string.IsNullOrEmpty(avatarUrl))
             {
                 return StatusCode(500, new { message = "Failed to upload image" });
             }
-
+    
             // Update user avatar URL in database
-            await _authService.UpdateUserAvatarAsync(userEmail, avatarUrl);
-
+            var updated = await _authService.UpdateUserAvatarAsync(userEmail, avatarUrl);
+            if (!updated)
+            {
+                return StatusCode(500, new { message = "Failed to update user avatar" });
+            }
+    
             return Ok(new { message = "Avatar uploaded successfully", avatarUrl });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while uploading avatar" });
+            return StatusCode(500, new { message = $"An error occurred while uploading avatar: {ex.Message}" });
+        }
+    }
+
+    [HttpGet("user/{userId}")]
+    public async Task<IActionResult> GetUser(Guid userId)
+    {
+        try
+        {
+            // Check for service-to-service authentication
+            var serviceKey = Request.Headers["X-Service-Key"].FirstOrDefault();
+            var expectedServiceKey = "tasky-service-internal-key"; // In production, get this from configuration
+            
+            if (string.IsNullOrEmpty(serviceKey) || serviceKey != expectedServiceKey)
+            {
+                return Unauthorized(new { message = "Invalid service authentication" });
+            }
+
+            var user = await _authService.GetUserByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while retrieving user" });
         }
     }
 }

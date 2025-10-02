@@ -32,6 +32,17 @@ export class ThemeService {
     return this.theme().mode == 'dark';
   }
 
+  public setThemeColor(color: string) {
+    this.theme.update(currentTheme => ({ ...currentTheme, color }));
+  }
+
+  public toggleThemeMode() {
+    this.theme.update(currentTheme => ({
+      ...currentTheme,
+      mode: currentTheme.mode === 'light' ? 'dark' : 'light'
+    }));
+  }
+
   private setThemeClass() {
     document.querySelector('html')!.className = this.theme().mode;
     document.querySelector('html')!.setAttribute('data-theme', this.theme().color);

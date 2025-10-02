@@ -8,8 +8,8 @@ const routes: Routes = [
     component: LayoutComponent,
     children: [
       {
-        path: 'dashboard',
-        loadChildren: () => import('../dashboard/dashboard.module').then((m) => m.DashboardModule),
+        path: 'todos',
+        loadComponent: () => import('../../features/todos/pages/todos-dashboard/todos-dashboard.component').then(c => c.TodosDashboardComponent),
       },
       {
         path: 'settings',
@@ -23,7 +23,7 @@ const routes: Routes = [
         path: 'components',
         loadChildren: () => import('../uikit/uikit.module').then((m) => m.UikitModule),
       },
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: '', redirectTo: 'todos', pathMatch: 'full' },
     ]
   }
 ];

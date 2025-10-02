@@ -109,7 +109,7 @@ export class NotificationService {
         read: false,
         actionable: true,
         actionText: 'Go to Settings',
-        actionUrl: '/settings'
+        actionUrl: '/dashboard/settings'
       }
     ];
 

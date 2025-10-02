@@ -14,15 +14,26 @@ public class RabbitMQEventService : IEventService, IDisposable
 
     public RabbitMQEventService(string connectionString)
     {
-        var factory = new ConnectionFactory()
+        try
         {
-            Uri = new Uri(connectionString)
-        };
-        
-        _connection = factory.CreateConnection();
-        _channel = _connection.CreateModel();
-        
-        _channel.ExchangeDeclare(exchange: ExchangeName, type: ExchangeType.Direct, durable: true);
+            var factory = new ConnectionFactory()
+            {
+                Uri = new Uri(connectionString),
+                AutomaticRecoveryEnabled = true,
+                RequestedHeartbeat = TimeSpan.FromSeconds(60),
+                NetworkRecoveryInterval = TimeSpan.FromSeconds(10)
+            };
+            
+            _connection = factory.CreateConnection();
+            _channel = _connection.CreateModel();
+            
+            _channel.ExchangeDeclare(exchange: ExchangeName, type: ExchangeType.Direct, durable: true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"RabbitMQ connection failed: {ex.Message}");
+            // Don't throw, let the service continue without RabbitMQ
+        }
     }
 
     public async Task PublishTodoCreatedEventAsync(TodoCreatedEvent todoEvent)
@@ -63,18 +74,32 @@ public class RabbitMQEventService : IEventService, IDisposable
 
     private async Task PublishEventAsync(string routingKey, object message)
     {
-        var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
+        try
+        {
+            if (_channel == null || _connection == null || !_connection.IsOpen)
+            {
+                Console.WriteLine("RabbitMQ is not available, skipping event publish");
+                return;
+            }
 
-        var properties = _channel.CreateBasicProperties();
-        properties.Persistent = true;
+            var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
 
-        _channel.BasicPublish(
-            exchange: ExchangeName,
-            routingKey: routingKey,
-            basicProperties: properties,
-            body: body);
+            var properties = _channel.CreateBasicProperties();
+            properties.Persistent = true;
 
-        await Task.CompletedTask;
+            _channel.BasicPublish(
+                exchange: ExchangeName,
+                routingKey: routingKey,
+                basicProperties: properties,
+                body: body);
+
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to publish event: {ex.Message}");
+            // Continue without throwing
+        }
     }
 
     public void Dispose()
