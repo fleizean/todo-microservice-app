@@ -1,0 +1,335 @@
+<!-- Header Section -->
+<div class="mb-6 flex justify-between">
+  <div class="inline-block">
+    <h3 class="text-foreground font-semibold">Settings</h3>
+    <div class="text-muted-foreground space-x-1 text-xs font-medium">
+      <span class="hover:text-primary">Manage your</span>
+      <span class="text-foreground">account preferences</span>
+      <span>and configuration</span>
+    </div>
+  </div>
+  <div class="inline-block space-x-4">
+    <button
+      (click)="onExportSettings()"
+      class="bg-muted text-muted-foreground hover:text-foreground flex-none rounded-md px-4 py-2.5 text-xs font-semibold">
+      Export Settings
+    </button>
+    <input
+      type="file"
+      accept=".json"
+      (change)="onImportSettings($event)"
+      class="hidden"
+      #importInput
+    >
+    <button 
+      (click)="importInput.click()"
+      class="bg-muted text-muted-foreground hover:text-foreground flex-none rounded-md px-4 py-2.5 text-xs font-semibold">
+      Import Settings
+    </button>
+    <button 
+      (click)="onSaveAllChanges()"
+      [disabled]="loading"
+      class="bg-primary text-primary-foreground disabled:opacity-50 flex-none rounded-md px-4 py-2.5 text-xs font-semibold">
+      <span *ngIf="!loading">Save All Changes</span>
+      <span *ngIf="loading">Saving...</span>
+    </button>
+  </div>
+</div>
+    
+<!-- Success/Error Messages -->
+<div *ngIf="saveSuccess" class="mb-6 rounded-lg border border-green-500/50 bg-green-500/10 px-4 py-3 text-green-700 dark:text-green-400">
+  Settings updated successfully!
+</div>
+<div *ngIf="saveError" class="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-destructive">
+  {{ saveError }}
+</div>
+
+<!-- User Profile Section -->
+<div class="border-muted/20 bg-background rounded-xl border p-6 mb-6">
+  <h2 class="text-foreground text-lg font-semibold mb-4 flex items-center">
+    <div class="bg-primary/10 rounded-full p-2 mr-3">
+      <svg-icon src="assets/icons/heroicons/outline/user.svg" class="h-5 w-5 text-primary"></svg-icon>
+    </div>
+    User Profile
+  </h2>
+
+  <!-- Avatar Upload Section -->
+  <div class="mb-6 flex items-center space-x-4">
+    <div class="relative">
+      <div class="w-20 h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-muted">
+        <img 
+          *ngIf="userProfile.avatar" 
+          [src]="userProfile.avatar" 
+          [alt]="userProfile.fullName || 'User Avatar'"
+          class="w-full h-full object-cover"
+        >
+        <div 
+          *ngIf="!userProfile.avatar"
+          class="w-full h-full bg-primary flex items-center justify-center text-primary-foreground text-xl font-semibold"
+        >
+          {{ getUserInitial() }}
+        </div>
+      </div>
+    </div>
+    <div>
+      <label class="text-foreground block text-sm font-medium mb-2">Profile Picture</label>
+      <input 
+        type="file" 
+        accept="image/*"
+        (change)="onAvatarFileSelected($event)"
+        class="hidden"
+        #avatarInput
+      >
+      <button 
+        (click)="avatarInput.click()"
+        [disabled]="loading"
+        class="bg-muted text-muted-foreground hover:text-foreground disabled:opacity-50 rounded-md px-4 py-2 text-sm font-medium transition-colors"
+      >
+        <span *ngIf="!loading">Choose Photo</span>
+        <span *ngIf="loading">Uploading...</span>
+      </button>
+      <p class="text-xs text-muted-foreground mt-1">Max 5MB. JPEG, PNG, GIF supported.</p>
+    </div>
+  </div>
+      
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="text-foreground block text-sm font-medium mb-2">Full Name</label>
+      <input 
+        type="text" 
+        [(ngModel)]="userProfile.fullName"
+        class="border-muted bg-background text-foreground placeholder:text-muted-foreground w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+        placeholder="Enter your full name"
+      >
+    </div>
+    
+    <div>
+      <label class="text-foreground block text-sm font-medium mb-2">Username</label>
+      <input 
+        type="text" 
+        [(ngModel)]="userProfile.username"
+        class="border-muted bg-background text-foreground placeholder:text-muted-foreground w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+        placeholder="Enter your username"
+      >
+    </div>
+    
+    <div>
+      <label class="text-foreground block text-sm font-medium mb-2">Email Address</label>
+      <input 
+        type="email" 
+        [(ngModel)]="userProfile.email"
+        class="border-muted bg-background text-foreground placeholder:text-muted-foreground w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+        placeholder="Enter your email"
+      >
+    </div>
+    
+   
+  </div>
+  
+  <button 
+    (click)="onSaveProfile()"
+    [disabled]="loading"
+    class="mt-4 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 rounded-lg px-6 py-2 text-sm font-medium transition-colors"
+  >
+    <span *ngIf="!loading">Save Profile</span>
+    <span *ngIf="loading">Saving...</span>
+  </button>
+</div>
+
+<!-- Notification Settings -->
+<div class="border-muted/20 bg-background rounded-xl border p-6 mb-6">
+  <h2 class="text-foreground text-lg font-semibold mb-4 flex items-center">
+    <div class="bg-green-100 dark:bg-green-900/20 rounded-full p-2 mr-3">
+      <svg-icon src="assets/icons/heroicons/outline/bell.svg" class="h-5 w-5 text-green-600 dark:text-green-400"></svg-icon>
+    </div>
+    Notification Preferences
+  </h2>
+      
+  <div class="space-y-4">
+    <div class="flex items-center justify-between p-3 bg-card/50 rounded-lg">
+      <div>
+        <label class="font-medium text-foreground">Email Notifications</label>
+        <p class="text-sm text-muted-foreground">Receive notifications via email</p>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input 
+          type="checkbox" 
+          [(ngModel)]="notifications.emailNotifications"
+          class="sr-only peer"
+        >
+        <div class="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+      </label>
+    </div>
+    
+    <div class="flex items-center justify-between p-3 bg-card/50 rounded-lg">
+      <div>
+        <label class="font-medium text-foreground">Push Notifications</label>
+        <p class="text-sm text-muted-foreground">Receive browser push notifications</p>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input 
+          type="checkbox" 
+          [(ngModel)]="notifications.pushNotifications"
+          class="sr-only peer"
+        >
+        <div class="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+      </label>
+    </div>
+    
+    <div class="flex items-center justify-between p-3 bg-card/50 rounded-lg">
+      <div>
+        <label class="font-medium text-foreground">Task Reminders</label>
+        <p class="text-sm text-muted-foreground">Get reminded about upcoming deadlines</p>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input 
+          type="checkbox" 
+          [(ngModel)]="notifications.reminderNotifications"
+          class="sr-only peer"
+        >
+        <div class="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+      </label>
+    </div>
+    
+    <div class="flex items-center justify-between p-3 bg-card/50 rounded-lg">
+      <div>
+        <label class="font-medium text-foreground">Task Assignments</label>
+        <p class="text-sm text-muted-foreground">Notifications when tasks are assigned to you</p>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input 
+          type="checkbox" 
+          [(ngModel)]="notifications.taskAssignments"
+          class="sr-only peer"
+        >
+        <div class="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+      </label>
+    </div>
+    
+    <div class="flex items-center justify-between p-3 bg-card/50 rounded-lg">
+      <div>
+        <label class="font-medium text-foreground">Task Deadlines</label>
+        <p class="text-sm text-muted-foreground">Notifications for approaching deadlines</p>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input 
+          type="checkbox" 
+          [(ngModel)]="notifications.taskDeadlines"
+          class="sr-only peer"
+        >
+        <div class="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+      </label>
+    </div>
+    
+    <div class="flex items-center justify-between p-3 bg-card/50 rounded-lg">
+      <div>
+        <label class="font-medium text-foreground">Daily Digest</label>
+        <p class="text-sm text-muted-foreground">Daily summary of your tasks and activities</p>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input 
+          type="checkbox" 
+          [(ngModel)]="notifications.dailyDigest"
+          class="sr-only peer"
+        >
+        <div class="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+      </label>
+    </div>
+    
+    <div class="flex items-center justify-between p-3 bg-card/50 rounded-lg">
+      <div>
+        <label class="font-medium text-foreground">Weekly Digest</label>
+        <p class="text-sm text-muted-foreground">Receive weekly summary of your tasks</p>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input 
+          type="checkbox" 
+          [(ngModel)]="notifications.weeklyDigest"
+          class="sr-only peer"
+        >
+        <div class="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+      </label>
+    </div>
+  </div>
+  
+  <button 
+    (click)="onSaveNotifications()"
+    [disabled]="loading"
+    class="mt-4 bg-green-600 dark:bg-green-700 text-white hover:bg-green-700 dark:hover:bg-green-600 disabled:opacity-50 rounded-lg px-6 py-2 text-sm font-medium transition-colors"
+  >
+    <span *ngIf="!loading">Save Notifications</span>
+    <span *ngIf="loading">Saving...</span>
+  </button>
+</div>
+
+<!-- Theme Settings -->
+<div class="border-muted/20 bg-background rounded-xl border p-6 mb-6">
+  <h2 class="text-foreground text-lg font-semibold mb-4 flex items-center">
+    <div class="bg-purple-100 dark:bg-purple-900/20 rounded-full p-2 mr-3">
+      <svg-icon src="assets/icons/heroicons/outline/adjustments-horizontal.svg" class="h-5 w-5 text-purple-600 dark:text-purple-400"></svg-icon>
+    </div>
+    Theme & Appearance
+  </h2>
+      
+  <div class="space-y-4">
+    <div class="flex items-center justify-between p-3 bg-card/50 rounded-lg">
+      <div>
+        <label class="font-medium text-foreground">Dark Mode</label>
+        <p class="text-sm text-muted-foreground">Switch between light and dark themes</p>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input 
+          type="checkbox" 
+          [(ngModel)]="theme.darkMode"
+          class="sr-only peer"
+        >
+        <div class="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+      </label>
+    </div>
+    
+    
+    <div class="p-3 bg-card/50 rounded-lg">
+      <label class="font-medium text-foreground block mb-2">Font Size</label>
+      <select 
+        [(ngModel)]="theme.fontSize"
+        class="border-muted bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+      >
+        <option *ngFor="let size of fontSizes" [value]="size.value">
+          {{ size.label }}
+        </option>
+      </select>
+    </div>
+    
+  </div>
+  
+  <button 
+    (click)="onSaveTheme()"
+    [disabled]="loading"
+    class="mt-4 bg-green-600 dark:bg-green-700 text-white hover:bg-green-700 dark:hover:bg-green-600 disabled:opacity-50 rounded-lg px-6 py-2 text-sm font-medium transition-colors"
+  >
+    <span *ngIf="!loading">Save Theme</span>
+    <span *ngIf="loading">Saving...</span>
+  </button>
+</div>
+
+<!-- Settings Actions -->
+<div class="border-muted/20 bg-background rounded-xl border p-6">
+  <h2 class="text-foreground text-lg font-semibold mb-4 flex items-center">
+    <div class="bg-gray-100 dark:bg-gray-800 rounded-full p-2 mr-3">
+      <svg-icon src="assets/icons/heroicons/outline/cog-6-tooth.svg" class="h-5 w-5 text-gray-600 dark:text-gray-400"></svg-icon>
+    </div>
+    Advanced Settings
+  </h2>
+  
+  <div class="space-y-4">
+    <button 
+      (click)="onResetToDefaults()"
+      [disabled]="loading"
+      class="w-full bg-destructive/10 text-destructive hover:bg-destructive/20 disabled:opacity-50 rounded-lg px-6 py-3 text-sm font-medium transition-colors border border-destructive/20"
+    >
+      <span *ngIf="!loading">Reset to Defaults</span>
+      <span *ngIf="loading">Resetting...</span>
+    </button>
+  </div>
+</div>
+

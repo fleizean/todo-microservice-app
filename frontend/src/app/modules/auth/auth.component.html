@@ -1,0 +1,23 @@
+<div class="flex h-screen w-screen">
+  <div class="auth-bg bg-primary hidden flex-1 items-center justify-center bg-cover lg:flex">
+    <div class="max-w-2xl space-y-4 p-8 text-center text-white">
+      <img src="./assets/images/auth-screens.png" alt="dashboard widget" />
+      <h1 class="text-4xl font-bold">"Notes that boost your productivity"</h1>
+      <p class="text-xs font-light">
+        tasky is a simple, beautiful, and free task management app to help you organize your personal and
+        <span class="cursor-pointer font-medium text-yellow-400">professional life</span>.
+        
+      </p>
+    </div>
+  </div>
+  <div class="bg-background flex flex-1 items-center justify-center">
+    <div class="max-w-md overflow-y-auto px-4 sm:w-[500px]">
+      <!-- logo -->
+        <a class="text-center justify-center flex" routerLink="/">
+          <img [src]="logoSrc" alt="Logo" class="h-24 w-24 object-contain" />        
+        </a>
+      <!-- Route -->
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>

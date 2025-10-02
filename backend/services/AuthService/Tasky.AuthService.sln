@@ -1,0 +1,59 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{E4951E35-3538-4DFE-8EAE-BC23F695F306}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tasky.AuthService.Domain", "Core\Tasky.AuthService.Domain\Tasky.AuthService.Domain.csproj", "{B2816E30-D6D1-423B-9161-07F0CB4A15AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tasky.AuthService.Application", "Core\Tasky.AuthService.Application\Tasky.AuthService.Application.csproj", "{BC82813B-33AA-4C45-A237-CDE2B2CB11D6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{E9A54689-DD50-4471-A45F-71BB821E628D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tasky.AuthService.Persistence", "Infrastructure\Tasky.AuthService.Persistence\Tasky.AuthService.Persistence.csproj", "{AC2C2DD4-5731-4F82-832F-BB7F858AC075}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tasky.AuthService.Infrastructure", "Infrastructure\Tasky.AuthService.Infrastructure\Tasky.AuthService.Infrastructure.csproj", "{82C1E214-F4C9-4DBD-A57A-EECDD47D6DEB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{2F1BF88D-DF8F-4E01-BC3B-E9B244A44F2D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tasky.AuthService.API", "Presentation\Tasky.AuthService.API\Tasky.AuthService.API.csproj", "{51AD8768-9DE5-419E-A706-2C2FFC13318B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B2816E30-D6D1-423B-9161-07F0CB4A15AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2816E30-D6D1-423B-9161-07F0CB4A15AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2816E30-D6D1-423B-9161-07F0CB4A15AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2816E30-D6D1-423B-9161-07F0CB4A15AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC82813B-33AA-4C45-A237-CDE2B2CB11D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC82813B-33AA-4C45-A237-CDE2B2CB11D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC82813B-33AA-4C45-A237-CDE2B2CB11D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC82813B-33AA-4C45-A237-CDE2B2CB11D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC2C2DD4-5731-4F82-832F-BB7F858AC075}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC2C2DD4-5731-4F82-832F-BB7F858AC075}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC2C2DD4-5731-4F82-832F-BB7F858AC075}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC2C2DD4-5731-4F82-832F-BB7F858AC075}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82C1E214-F4C9-4DBD-A57A-EECDD47D6DEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82C1E214-F4C9-4DBD-A57A-EECDD47D6DEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82C1E214-F4C9-4DBD-A57A-EECDD47D6DEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82C1E214-F4C9-4DBD-A57A-EECDD47D6DEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51AD8768-9DE5-419E-A706-2C2FFC13318B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51AD8768-9DE5-419E-A706-2C2FFC13318B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51AD8768-9DE5-419E-A706-2C2FFC13318B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51AD8768-9DE5-419E-A706-2C2FFC13318B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B2816E30-D6D1-423B-9161-07F0CB4A15AD} = {E4951E35-3538-4DFE-8EAE-BC23F695F306}
+		{BC82813B-33AA-4C45-A237-CDE2B2CB11D6} = {E4951E35-3538-4DFE-8EAE-BC23F695F306}
+		{AC2C2DD4-5731-4F82-832F-BB7F858AC075} = {E9A54689-DD50-4471-A45F-71BB821E628D}
+		{82C1E214-F4C9-4DBD-A57A-EECDD47D6DEB} = {E9A54689-DD50-4471-A45F-71BB821E628D}
+		{51AD8768-9DE5-419E-A706-2C2FFC13318B} = {2F1BF88D-DF8F-4E01-BC3B-E9B244A44F2D}
+	EndGlobalSection
+EndGlobal

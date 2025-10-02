@@ -1,0 +1,59 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{411679D9-0DAB-4A01-9FEA-6643C8DD1A94}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tasky.TodoService.Domain", "Core\Tasky.TodoService.Domain\Tasky.TodoService.Domain.csproj", "{0BB806B7-CC92-4F82-A4D6-A8FDC08D524E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tasky.TodoService.Application", "Core\Tasky.TodoService.Application\Tasky.TodoService.Application.csproj", "{F2D732ED-3276-4FE8-9973-C8C554C92E08}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{97B7E5DE-8FF7-42DB-B903-B1D987837FB8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tasky.TodoService.Persistence", "Infrastructure\Tasky.TodoService.Persistence\Tasky.TodoService.Persistence.csproj", "{8A168366-3EAA-4079-BC98-5124CA0DCCC6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tasky.TodoService.Infrastructure", "Infrastructure\Tasky.TodoService.Infrastructure\Tasky.TodoService.Infrastructure.csproj", "{DC71962C-034C-47CF-B252-E02C9DB60BA3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{12741D98-823B-4D4F-BAA8-F2C13C147BFB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tasky.TodoService.API", "Presentation\Tasky.TodoService.API\Tasky.TodoService.API.csproj", "{B6F9D348-E69E-42F9-8937-41A8F272F555}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0BB806B7-CC92-4F82-A4D6-A8FDC08D524E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0BB806B7-CC92-4F82-A4D6-A8FDC08D524E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0BB806B7-CC92-4F82-A4D6-A8FDC08D524E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0BB806B7-CC92-4F82-A4D6-A8FDC08D524E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2D732ED-3276-4FE8-9973-C8C554C92E08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2D732ED-3276-4FE8-9973-C8C554C92E08}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2D732ED-3276-4FE8-9973-C8C554C92E08}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2D732ED-3276-4FE8-9973-C8C554C92E08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A168366-3EAA-4079-BC98-5124CA0DCCC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A168366-3EAA-4079-BC98-5124CA0DCCC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A168366-3EAA-4079-BC98-5124CA0DCCC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A168366-3EAA-4079-BC98-5124CA0DCCC6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC71962C-034C-47CF-B252-E02C9DB60BA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC71962C-034C-47CF-B252-E02C9DB60BA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC71962C-034C-47CF-B252-E02C9DB60BA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC71962C-034C-47CF-B252-E02C9DB60BA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6F9D348-E69E-42F9-8937-41A8F272F555}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6F9D348-E69E-42F9-8937-41A8F272F555}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6F9D348-E69E-42F9-8937-41A8F272F555}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6F9D348-E69E-42F9-8937-41A8F272F555}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{0BB806B7-CC92-4F82-A4D6-A8FDC08D524E} = {411679D9-0DAB-4A01-9FEA-6643C8DD1A94}
+		{F2D732ED-3276-4FE8-9973-C8C554C92E08} = {411679D9-0DAB-4A01-9FEA-6643C8DD1A94}
+		{8A168366-3EAA-4079-BC98-5124CA0DCCC6} = {97B7E5DE-8FF7-42DB-B903-B1D987837FB8}
+		{DC71962C-034C-47CF-B252-E02C9DB60BA3} = {97B7E5DE-8FF7-42DB-B903-B1D987837FB8}
+		{B6F9D348-E69E-42F9-8937-41A8F272F555} = {12741D98-823B-4D4F-BAA8-F2C13C147BFB}
+	EndGlobalSection
+EndGlobal

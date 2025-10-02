@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.9" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\Tasky.AuthService.Application\Tasky.AuthService.Application.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\Tasky.AuthService.Persistence\Tasky.AuthService.Persistence.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\Tasky.AuthService.Infrastructure\Tasky.AuthService.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

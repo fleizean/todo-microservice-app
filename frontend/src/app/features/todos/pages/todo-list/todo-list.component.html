@@ -1,0 +1,140 @@
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <!-- Header -->
+  <header class="bg-white dark:bg-gray-800 shadow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center py-6">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Tasky</h1>
+          <p class="text-sm text-gray-600 dark:text-gray-300" *ngIf="user">
+            Welcome back, {{ user.username }}!
+          </p>
+        </div>
+        <button
+          (click)="logout()"
+          class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <!-- Error Message -->
+    <div *ngIf="error" class="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+      {{ error }}
+    </div>
+
+    <!-- Add Todo Form -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Add New Todo</h2>
+      <form (ngSubmit)="addTodo()" class="space-y-4">
+        <div>
+          <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Title *
+          </label>
+          <input
+            id="title"
+            type="text"
+            [(ngModel)]="newTodo.title"
+            name="title"
+            required
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+            placeholder="Enter todo title"
+          />
+        </div>
+        <div>
+          <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Description
+          </label>
+          <textarea
+            id="description"
+            [(ngModel)]="newTodo.description"
+            name="description"
+            rows="3"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+            placeholder="Enter todo description (optional)"
+          ></textarea>
+        </div>
+        <button
+          type="submit"
+          [disabled]="loading || !newTodo.title.trim()"
+          class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-md font-medium transition-colors"
+        >
+          <span *ngIf="!loading">Add Todo</span>
+          <span *ngIf="loading">Adding...</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Todo List -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+      <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Your Todos</h2>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="loading && todos.length === 0" class="px-6 py-8 text-center">
+        <div class="text-gray-500 dark:text-gray-400">Loading todos...</div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!loading && todos.length === 0" class="px-6 py-8 text-center">
+        <div class="text-gray-500 dark:text-gray-400 mb-2">No todos yet</div>
+        <div class="text-sm text-gray-400 dark:text-gray-500">Add your first todo above to get started!</div>
+      </div>
+
+      <!-- Todo Items -->
+      <div *ngIf="todos.length > 0" class="divide-y divide-gray-200 dark:divide-gray-700">
+        <div *ngFor="let todo of todos; trackBy: trackById" 
+             class="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          <div class="flex items-start space-x-3">
+            <!-- Checkbox -->
+            <input
+              type="checkbox"
+              [checked]="todo.isCompleted"
+              (change)="toggleTodo(todo)"
+              class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            
+            <!-- Content -->
+            <div class="flex-1 min-w-0">
+              <h3 
+                class="text-sm font-medium text-gray-900 dark:text-white"
+                [class.line-through]="todo.isCompleted"
+                [class.text-gray-500]="todo.isCompleted"
+              >
+                {{ todo.title }}
+              </h3>
+              <p 
+                *ngIf="todo.description" 
+                class="mt-1 text-sm text-gray-600 dark:text-gray-400"
+                [class.line-through]="todo.isCompleted"
+              >
+                {{ todo.description }}
+              </p>
+              <div class="mt-2 flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                <span>Created: {{ todo.createdAt | date:'short' }}</span>
+                <span *ngIf="todo.updatedAt">Updated: {{ todo.updatedAt | date:'short' }}</span>
+              </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex-shrink-0">
+              <button
+                (click)="deleteTodo(todo.id)"
+                class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                title="Delete todo"
+              >
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

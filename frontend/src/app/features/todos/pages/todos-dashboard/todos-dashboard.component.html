@@ -1,0 +1,416 @@
+<!-- Header Section -->
+<div class="mb-6 flex justify-between">
+  <div class="inline-block">
+    <h3 class="text-foreground font-semibold">Todo Management</h3>
+    <div class="text-muted-foreground space-x-1 text-xs font-medium" *ngIf="user">
+      <span class="hover:text-primary">Welcome back,</span>
+      <span class="text-foreground">{{ user.username }}</span>
+      <span class="text-muted-foreground">•</span>
+      <span class="text-foreground">{{ pendingTodos.length }}</span>
+      <span>pending tasks</span>
+    </div>
+  </div>
+  <div class="inline-block space-x-4">
+    <button
+      class="bg-muted text-muted-foreground hover:text-foreground flex-none rounded-md px-4 py-2.5 text-xs font-semibold">
+      Export Tasks
+    </button>
+    <button 
+      (click)="showAddForm = !showAddForm"
+      class="bg-primary text-primary-foreground flex-none rounded-md px-4 py-2.5 text-xs font-semibold">
+      Add New Todo
+    </button>
+  </div>
+</div>
+
+<!-- Error Message -->
+<div *ngIf="error" class="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-destructive">
+  {{ error }}
+</div>
+
+<!-- Stats Grid -->
+<div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
+  <!-- Total Todos Card -->
+  <div class="bg-background border-muted/20 rounded-xl border p-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-muted-foreground text-sm font-medium">Total Tasks</p>
+        <p class="text-foreground text-2xl font-bold">{{ todos.length }}</p>
+        <p class="text-muted-foreground text-xs">All your tasks</p>
+      </div>
+      <div class="bg-primary/10 rounded-full p-3">
+        <svg-icon src="assets/icons/heroicons/outline/view-grid.svg" class="h-24 w-24 text-primary"></svg-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Todos Card -->
+  <div class="bg-background border-muted/20 rounded-xl border p-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-muted-foreground text-sm font-medium">Pending</p>
+        <p class="text-foreground text-2xl font-bold">{{ pendingTodos.length }}</p>
+        <p class="text-muted-foreground text-xs">Tasks to complete</p>
+      </div>
+      <div class="bg-orange-100 dark:bg-orange-900/20 rounded-full p-3">
+        <svg-icon src="assets/icons/heroicons/outline/cursor-click.svg" class="h-24 w-24 text-orange-600 dark:text-orange-400"></svg-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- Completed Todos Card -->
+  <div class="bg-background border-muted/20 rounded-xl border p-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-muted-foreground text-sm font-medium">Completed</p>
+        <p class="text-foreground text-2xl font-bold">{{ completedTodos.length }}</p>
+        <p class="text-muted-foreground text-xs">Finished tasks</p>
+      </div>
+      <div class="bg-green-100 dark:bg-green-900/20 rounded-full p-3">
+        <svg-icon src="assets/icons/heroicons/outline/shield-check.svg" class="h-24 w-24 text-green-600 dark:text-green-400"></svg-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- Completion Rate Card -->
+  <div class="bg-background border-muted/20 rounded-xl border p-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-muted-foreground text-sm font-medium">Completion</p>
+        <p class="text-foreground text-2xl font-bold">{{ completionPercentage }}%</p>
+        <p class="text-muted-foreground text-xs">Success rate</p>
+      </div>
+      <div class="bg-purple-100 dark:bg-purple-900/20 rounded-full p-3">
+        <svg-icon src="assets/icons/heroicons/outline/chart-pie.svg" class="h-24 w-24 text-purple-600 dark:text-purple-400"></svg-icon>
+      </div>
+    </div>
+    <div class="mt-4">
+      <div class="bg-muted h-2 rounded-full">
+        <div 
+          class="bg-primary h-2 rounded-full transition-all duration-300"
+          [style.width.%]="completionPercentage"
+        ></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Enhanced Add Todo Form -->
+<div *ngIf="showAddForm" class="mb-6 border-muted/20 bg-background rounded-xl border p-6">
+  <h3 class="text-foreground mb-4 text-lg font-semibold">✨ Create New Todo</h3>
+  <form (ngSubmit)="addTodo()" class="space-y-6">
+    
+    <!-- Basic Information Row -->
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div>
+        <label for="title" class="text-foreground mb-2 block text-sm font-medium">
+          Title *
+        </label>
+        <input
+          id="title"
+          type="text"
+          [(ngModel)]="newTodo.title"
+          name="title"
+          required
+          class="border-muted bg-background text-foreground placeholder:text-muted-foreground w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+          placeholder="What do you need to do?"
+        />
+      </div>
+      <div>
+        <label for="description" class="text-foreground mb-2 block text-sm font-medium">
+          Description
+        </label>
+        <textarea
+          id="description"
+          [(ngModel)]="newTodo.description"
+          name="description"
+          rows="2"
+          class="border-muted bg-background text-foreground placeholder:text-muted-foreground w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+          placeholder="Add more details... (optional)"
+        ></textarea>
+      </div>
+    </div>
+    
+    <!-- Priority and Category Row -->
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
+      <div>
+        <label for="priority" class="text-foreground mb-2 block text-sm font-medium">
+          Priority
+        </label>
+        <select
+          id="priority"
+          [(ngModel)]="newTodo.priority"
+          name="priority"
+          class="border-muted bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+        >
+          <option [value]="TodoPriority.Low">🟢 Low</option>
+          <option [value]="TodoPriority.Medium">🟡 Medium</option>
+          <option [value]="TodoPriority.High">🟠 High</option>
+          <option [value]="TodoPriority.Urgent">🔴 Urgent</option>
+        </select>
+      </div>
+      
+      <div>
+        <label for="category" class="text-foreground mb-2 block text-sm font-medium">
+          Category
+        </label>
+        <select
+          id="category"
+          [(ngModel)]="newTodo.category"
+          name="category"
+          class="border-muted bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+        >
+          <option [value]="TodoCategory.Personal">👤 Personal</option>
+          <option [value]="TodoCategory.Work">💼 Work</option>
+          <option [value]="TodoCategory.Shopping">🛒 Shopping</option>
+          <option [value]="TodoCategory.Health">🏥 Health</option>
+          <option [value]="TodoCategory.Education">📚 Education</option>
+          <option [value]="TodoCategory.Finance">💰 Finance</option>
+          <option [value]="TodoCategory.Other">📝 Other</option>
+        </select>
+      </div>
+      
+      <div>
+        <label for="estimatedMinutes" class="text-foreground mb-2 block text-sm font-medium">
+          Estimated Time
+        </label>
+        <div class="flex">
+          <input
+            id="estimatedMinutes"
+            type="number"
+            [(ngModel)]="newTodo.estimatedMinutes"
+            name="estimatedMinutes"
+            min="0"
+            max="1440"
+            class="border-muted bg-background text-foreground placeholder:text-muted-foreground w-full rounded-l-lg border border-r-0 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+            placeholder="30"
+          />
+          <span class="border-muted bg-muted text-muted-foreground inline-flex items-center rounded-r-lg border border-l-0 px-3 text-sm">min</span>
+        </div>
+      </div>
+      
+      <div>
+        <label for="tags" class="text-foreground mb-2 block text-sm font-medium">
+          Tags
+        </label>
+        <input
+          id="tags"
+          type="text"
+          [(ngModel)]="newTodo.tags"
+          name="tags"
+          class="border-muted bg-background text-foreground placeholder:text-muted-foreground w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+          placeholder="urgent, home, work"
+        />
+      </div>
+    </div>
+    
+    <!-- Dates Row -->
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div>
+        <label for="dueDate" class="text-foreground mb-2 block text-sm font-medium">
+          📅 Due Date
+        </label>
+        <input
+          id="dueDate"
+          type="datetime-local"
+          [(ngModel)]="newTodo.dueDate"
+          name="dueDate"
+          class="border-muted bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+        />
+      </div>
+      
+      <div>
+        <label for="reminderDateTime" class="text-foreground mb-2 block text-sm font-medium">
+          🔔 Reminder
+        </label>
+        <input
+          id="reminderDateTime"
+          type="datetime-local"
+          [(ngModel)]="newTodo.reminderDateTime"
+          name="reminderDateTime"
+          class="border-muted bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+        />
+      </div>
+    </div>
+    
+    <!-- Notes -->
+    <div>
+      <label for="notes" class="text-foreground mb-2 block text-sm font-medium">
+        📝 Additional Notes
+      </label>
+      <textarea
+        id="notes"
+        [(ngModel)]="newTodo.notes"
+        name="notes"
+        rows="3"
+        class="border-muted bg-background text-foreground placeholder:text-muted-foreground w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+        placeholder="Any additional notes, links, or details..."
+      ></textarea>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="flex space-x-3 pt-4 border-t border-muted/20">
+      <button
+        type="submit"
+        [disabled]="loading || !newTodo.title.trim()"
+        class="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 rounded-lg px-6 py-2.5 text-sm font-medium transition-colors"
+      >
+        <svg-icon src="assets/icons/heroicons/outline/plus.svg" class="h-4 w-4" *ngIf="!loading"></svg-icon>
+        <span *ngIf="!loading">Create Todo</span>
+        <span *ngIf="loading">Creating...</span>
+      </button>
+      <button
+        type="button"
+        (click)="resetNewTodo()"
+        class="border-muted bg-background text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors"
+      >
+        Clear
+      </button>
+      <button
+        type="button"
+        (click)="showAddForm = false"
+        class="border-muted bg-background text-foreground hover:bg-muted rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors"
+      >
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Todo Table -->
+<div class="border-muted/20 bg-background flex min-w-full flex-col rounded-xl border p-2">
+  <!-- Table Header Actions -->
+  <div class="flex items-center justify-between p-4">
+    <div class="flex items-center space-x-4">
+      <h3 class="text-foreground font-semibold">Your Tasks</h3>
+      <div class="flex items-center space-x-2">
+        <button 
+          [class]="filterStatus === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'"
+          (click)="filterStatus = 'all'"
+          class="rounded-md px-3 py-1 text-xs font-medium transition-colors">
+          All ({{ todos.length }})
+        </button>
+        <button 
+          [class]="filterStatus === 'pending' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'"
+          (click)="filterStatus = 'pending'"
+          class="rounded-md px-3 py-1 text-xs font-medium transition-colors">
+          Pending ({{ pendingTodos.length }})
+        </button>
+        <button 
+          [class]="filterStatus === 'completed' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'"
+          (click)="filterStatus = 'completed'"
+          class="rounded-md px-3 py-1 text-xs font-medium transition-colors">
+          Completed ({{ completedTodos.length }})
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Content -->
+  <div class="scrollbar-thumb-rounded scrollbar-track-rounded scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted grow overflow-x-auto px-5">
+    <table class="text-muted-foreground table w-full table-auto border-collapse border-0 text-left align-middle leading-5">
+      <thead class="border-muted/20 text-muted-foreground border text-xs">
+        <tr>
+          <th class="border-muted/20 w-12 border-b py-3 text-left font-medium">
+            <input type="checkbox" class="rounded border-gray-300 text-primary focus:ring-primary">
+          </th>
+          <th class="border-muted/20 border-b py-3 text-left font-medium">Task</th>
+          <th class="border-muted/20 border-b py-3 text-left font-medium">Description</th>
+          <th class="border-muted/20 border-b py-3 text-left font-medium">Status</th>
+          <th class="border-muted/20 border-b py-3 text-left font-medium">Created</th>
+          <th class="border-muted/20 border-b py-3 text-left font-medium">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="loading && todos.length === 0">
+          <td colspan="6" class="py-8 text-center text-sm">
+            <div class="text-muted-foreground">Loading todos...</div>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && filteredTodos.length === 0">
+          <td colspan="6" class="py-8 text-center text-sm">
+            <div class="text-muted-foreground mb-2">No todos found</div>
+            <button 
+              (click)="showAddForm = true"
+              class="text-primary hover:text-primary/80 text-xs font-medium">
+              Add your first todo
+            </button>
+          </td>
+        </tr>
+        <tr 
+          *ngFor="let todo of filteredTodos; trackBy: trackById"
+          class="hover:bg-card/50 transition-colors"
+        >
+          <td class="border-muted/20 border-b py-4">
+            <input
+              type="checkbox"
+              [checked]="todo.isCompleted"
+              (change)="toggleTodo(todo)"
+              class="rounded border-gray-300 text-primary focus:ring-primary"
+            />
+          </td>
+          <td class="border-muted/20 border-b py-4">
+            <div 
+              class="font-medium"
+              [class]="todo.isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'"
+            >
+              {{ todo.title }}
+            </div>
+          </td>
+          <td class="border-muted/20 border-b py-4">
+            <div 
+              class="text-sm"
+              [class]="todo.isCompleted ? 'line-through text-muted-foreground' : 'text-muted-foreground'"
+            >
+              {{ todo.description || '-' }}
+            </div>
+          </td>
+          <td class="border-muted/20 border-b py-4">
+            <span 
+              class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
+              [class]="todo.isCompleted ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'"
+            >
+              {{ todo.isCompleted ? 'Completed' : 'Pending' }}
+            </span>
+          </td>
+          <td class="border-muted/20 border-b py-4">
+            <div class="text-muted-foreground text-sm">
+              {{ todo.createdAt | date:'short' }}
+            </div>
+          </td>
+          <td class="border-muted/20 border-b py-4">
+            <div class="flex items-center space-x-2">
+              <button
+                (click)="toggleTodo(todo)"
+                class="text-muted-foreground hover:text-foreground transition-colors"
+                [title]="todo.isCompleted ? 'Mark as pending' : 'Mark as completed'"
+              >
+                <svg-icon 
+                  [src]="todo.isCompleted ? 'assets/icons/heroicons/outline/arrow-sm-up.svg' : 'assets/icons/heroicons/outline/shield-check.svg'" 
+                  class="h-4 w-4"
+                ></svg-icon>
+              </button>
+              <button
+                (click)="deleteTodo(todo.id)"
+                class="text-muted-foreground hover:text-destructive transition-colors"
+                title="Delete todo"
+              >
+                <svg-icon src="assets/icons/heroicons/outline/x.svg" class="h-4 w-4"></svg-icon>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Table Footer -->
+  <div class="border-muted/20 flex items-center justify-between border-t px-4 py-3">
+    <div class="text-muted-foreground text-sm">
+      Showing {{ filteredTodos.length }} of {{ todos.length }} tasks
+    </div>
+    <div class="text-muted-foreground text-sm">
+      {{ completionPercentage }}% completion rate
+    </div>
+  </div>
+</div>

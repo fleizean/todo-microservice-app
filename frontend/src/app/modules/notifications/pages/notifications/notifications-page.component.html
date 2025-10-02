@@ -1,0 +1,230 @@
+<!-- Header Section -->
+<div class="mb-6 flex justify-between">
+  <div class="inline-block">
+    <h3 class="text-foreground font-semibold">Notifications</h3>
+    <div class="text-muted-foreground space-x-1 text-xs font-medium">
+      <span class="hover:text-primary">Stay updated with</span>
+      <span class="text-foreground">{{unreadCount}}</span>
+      <span>unread notifications</span>
+    </div>
+  </div>
+  <div class="inline-block space-x-4">
+    <button
+      (click)="clearAllRead()"
+      class="bg-muted text-muted-foreground hover:text-foreground flex-none rounded-md px-4 py-2.5 text-xs font-semibold">
+      Clear Read
+    </button>
+    <button 
+      (click)="markAllAsRead()"
+      [disabled]="unreadCount === 0"
+      class="bg-primary text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed flex-none rounded-md px-4 py-2.5 text-xs font-semibold">
+      Mark All Read
+    </button>
+  </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
+  <!-- Total Notifications Card -->
+  <div class="bg-background border-muted/20 rounded-xl border p-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-muted-foreground text-sm font-medium">Total</p>
+        <p class="text-foreground text-2xl font-bold">{{ notifications.length }}</p>
+        <p class="text-muted-foreground text-xs">All notifications</p>
+      </div>
+      <div class="bg-primary/10 rounded-full p-3">
+        <svg-icon src="assets/icons/heroicons/outline/bell.svg" class="h-24 w-24 text-primary"></svg-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unread Notifications Card -->
+  <div class="bg-background border-muted/20 rounded-xl border p-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-muted-foreground text-sm font-medium">Unread</p>
+        <p class="text-foreground text-2xl font-bold">{{ unreadCount }}</p>
+        <p class="text-muted-foreground text-xs">Need attention</p>
+      </div>
+      <div class="bg-orange-100 dark:bg-orange-900/20 rounded-full p-3">
+        <svg-icon src="assets/icons/heroicons/outline/exclamation.svg" class="h-24 w-24 text-orange-600 dark:text-orange-400"></svg-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- Read Notifications Card -->
+  <div class="bg-background border-muted/20 rounded-xl border p-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-muted-foreground text-sm font-medium">Read</p>
+        <p class="text-foreground text-2xl font-bold">{{ notifications.length - unreadCount }}</p>
+        <p class="text-muted-foreground text-xs">Already seen</p>
+      </div>
+      <div class="bg-green-100 dark:bg-green-900/20 rounded-full p-3">
+        <svg-icon src="assets/icons/heroicons/outline/check.svg" class="h-24 w-24 text-green-600 dark:text-green-400"></svg-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- Today's Notifications Card -->
+  <div class="bg-background border-muted/20 rounded-xl border p-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-muted-foreground text-sm font-medium">Today</p>
+        <p class="text-foreground text-2xl font-bold">{{ getTodayCount() }}</p>
+        <p class="text-muted-foreground text-xs">Recent activity</p>
+      </div>
+      <div class="bg-purple-100 dark:bg-purple-900/20 rounded-full p-3">
+        <svg-icon src="assets/icons/heroicons/outline/calendar.svg" class="h-24 w-24 text-purple-600 dark:text-purple-400"></svg-icon>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Tabs -->
+<div class="border-muted/20 bg-background rounded-xl border p-2 mb-6">
+  <div class="flex items-center space-x-2 p-2">
+    <button 
+      [class]="filter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'"
+      (click)="filter = 'all'"
+      class="rounded-md px-3 py-1 text-xs font-medium transition-colors">
+      All ({{ notifications.length }})
+    </button>
+    <button 
+      [class]="filter === 'unread' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'"
+      (click)="filter = 'unread'"
+      class="rounded-md px-3 py-1 text-xs font-medium transition-colors">
+      Unread ({{ unreadCount }})
+    </button>
+    <button 
+      [class]="filter === 'read' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'"
+      (click)="filter = 'read'"
+      class="rounded-md px-3 py-1 text-xs font-medium transition-colors">
+      Read ({{ notifications.length - unreadCount }})
+    </button>
+  </div>
+</div>
+
+<!-- Notifications Table -->
+<div class="border-muted/20 bg-background flex min-w-full flex-col rounded-xl border p-2">
+  <!-- Table Header Actions -->
+  <div class="flex items-center justify-between p-4">
+    <div class="flex items-center space-x-4">
+      <h3 class="text-foreground font-semibold">Your Notifications</h3>
+    </div>
+  </div>
+
+  <!-- Table Content -->
+  <div class="scrollbar-thumb-rounded scrollbar-track-rounded scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted grow overflow-x-auto px-5">
+    <table class="text-muted-foreground table w-full table-auto border-collapse border-0 text-left align-middle leading-5">
+      <thead class="border-muted/20 text-muted-foreground border text-xs">
+        <tr>
+          <th class="border-muted/20 w-12 border-b py-3 text-left font-medium">Status</th>
+          <th class="border-muted/20 border-b py-3 text-left font-medium">Type</th>
+          <th class="border-muted/20 border-b py-3 text-left font-medium">Title</th>
+          <th class="border-muted/20 border-b py-3 text-left font-medium">Message</th>
+          <th class="border-muted/20 border-b py-3 text-left font-medium">Time</th>
+          <th class="border-muted/20 border-b py-3 text-left font-medium">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="filteredNotifications.length === 0">
+          <td colspan="6" class="py-8 text-center text-sm">
+            <div class="text-muted-foreground mb-2">
+              <span *ngIf="filter === 'all'">No notifications to show</span>
+              <span *ngIf="filter === 'unread'">No unread notifications</span>
+              <span *ngIf="filter === 'read'">No read notifications</span>
+            </div>
+            <div class="text-muted-foreground text-xs">You're all caught up!</div>
+          </td>
+        </tr>
+        <tr *ngFor="let notification of filteredNotifications"
+            class="hover:bg-card/50 transition-colors"
+            [ngClass]="{'bg-primary/5': !notification.read}">
+          <td class="border-muted/20 border-b py-4">
+            <div class="flex items-center space-x-2">
+              <span 
+                *ngIf="!notification.read"
+                class="w-2 h-2 bg-primary rounded-full animate-pulse"
+              ></span>
+              <span 
+                *ngIf="notification.read"
+                class="w-2 h-2 bg-muted rounded-full"
+              ></span>
+            </div>
+          </td>
+          <td class="border-muted/20 border-b py-4">
+            <span 
+              class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
+              [class]="getTypeClass(notification.type)"
+            >
+              <span class="mr-1">{{getTypeIcon(notification.type)}}</span>
+              {{ notification.type }}
+            </span>
+          </td>
+          <td class="border-muted/20 border-b py-4">
+            <div 
+              class="font-medium"
+              [class.text-foreground]="!notification.read"
+              [class.text-muted-foreground]="notification.read"
+            >
+             {{ notification.title }}
+            </div>
+          </td>
+          <td class="border-muted/20 border-b py-4">
+            <div 
+              class="text-sm max-w-xs truncate"
+              [class.text-foreground]="!notification.read"
+              [class.text-muted-foreground]="notification.read"
+            >
+              {{ notification.message }}
+            </div>
+          </td>
+          <td class="border-muted/20 border-b py-4">
+            <div class="text-muted-foreground text-sm">
+              {{ formatTimestamp(notification.timestamp) }}
+            </div>
+          </td>
+          <td class="border-muted/20 border-b py-4">
+            <div class="flex items-center space-x-2">
+              <button
+                *ngIf="notification.actionable && notification.actionText"
+                (click)="onAction(notification)"
+                class="text-primary hover:text-primary/80 text-xs font-medium underline"
+                [title]="notification.actionText"
+              >
+                {{ notification.actionText }}
+              </button>
+              <button
+                *ngIf="!notification.read"
+                (click)="markAsRead(notification)"
+                class="text-muted-foreground hover:text-foreground transition-colors"
+                title="Mark as read"
+              >
+                <svg-icon src="assets/icons/heroicons/outline/check.svg" class="h-4 w-4"></svg-icon>
+              </button>
+              <button
+                (click)="deleteNotification(notification.id)"
+                class="text-muted-foreground hover:text-destructive transition-colors"
+                title="Delete notification"
+              >
+                <svg-icon src="assets/icons/heroicons/outline/x.svg" class="h-4 w-4"></svg-icon>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Table Footer -->
+  <div class="border-muted/20 flex items-center justify-between border-t px-4 py-3">
+    <div class="text-muted-foreground text-sm">
+      Showing {{ filteredNotifications.length }} of {{ notifications.length }} notifications
+    </div>
+    <div class="text-muted-foreground text-sm">
+      {{ unreadCount }} unread
+    </div>
+  </div>
+</div>

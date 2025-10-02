@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=reallyStrongPassword1!
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - tasky-network
+
+  # Message Queue
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - tasky-network
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./backend/services/AuthService
+      dockerfile: Presentation/Tasky.AuthService.API/Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5001
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=TaskyAuthDb;User Id=sa;Password=reallyStrongPassword1!;Encrypt=False;TrustServerCertificate=True
+    depends_on:
+      - sqlserver
+    networks:
+      - tasky-network
+
+  # Todo Service
+  todo-service:
+    build:
+      context: ./backend/services/TodoService
+      dockerfile: Presentation/Tasky.TodoService.API/Dockerfile
+    ports:
+      - "5002:5002"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5002
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=TaskyTodoDB;User Id=sa;Password=reallyStrongPassword1!;Encrypt=False;TrustServerCertificate=True
+      - RabbitMQ__HostName=rabbitmq
+    depends_on:
+      - sqlserver
+      - rabbitmq
+    networks:
+      - tasky-network
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./backend/services/NotificationService
+      dockerfile: Tasky.NotificationService/Dockerfile
+    environment:
+      - RabbitMQ__HostName=rabbitmq
+    depends_on:
+      - rabbitmq
+    networks:
+      - tasky-network
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    environment:
+      - API_URL=http://localhost:5001
+      - TODO_API_URL=http://localhost:5002
+    depends_on:
+      - auth-service
+      - todo-service
+    networks:
+      - tasky-network
+
+volumes:
+  sqlserver-data:
+  rabbitmq-data:
+
+networks:
+  tasky-network:
+    driver: bridge
