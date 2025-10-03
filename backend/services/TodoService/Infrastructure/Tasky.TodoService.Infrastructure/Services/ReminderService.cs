@@ -83,14 +83,40 @@ public class ReminderService : IReminderService
     {
         try
         {
-            // Simplified email sending - in production, use proper email service
-            Console.WriteLine($"📧 Reminder email would be sent to {userEmail} for todo: {todo.Title}");
-            await Task.CompletedTask;
+            // Send email reminder via NotificationService RabbitMQ
+            var httpClient = _httpClientFactory.CreateClient();
+            var notificationServiceUrl = Environment.GetEnvironmentVariable("Services__NotificationService__BaseUrl") ?? "http://notification-service:5003";
+            
+            var emailReminderRequest = new
+            {
+                UserId = todo.UserId,
+                Email = userEmail,
+                Subject = $"⏰ Reminder: {todo.Title}",
+                Body = $"Don't forget about your todo: {todo.Title}\n\nDescription: {todo.Description}\n\nDue: {todo.ReminderDateTime:yyyy-MM-dd HH:mm}",
+                ScheduledAt = DateTime.UtcNow
+            };
+
+            var jsonContent = JsonSerializer.Serialize(emailReminderRequest);
+            var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+
+            var response = await httpClient.PostAsync($"{notificationServiceUrl}/api/email-reminder/schedule", content);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"📧 Email reminder scheduled successfully for {userEmail} - Todo: {todo.Title}");
+            }
+            else
+            {
+                Console.WriteLine($"⚠️ Failed to schedule email reminder. Status: {response.StatusCode}");
+                // Fallback: Log to console
+                Console.WriteLine($"📧 Reminder email would be sent to {userEmail} for todo: {todo.Title}");
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Failed to send reminder email for todo {todo.Id}: {ex.Message}");
-            throw;
+            // Fallback: Just log instead of throwing to not break the flow
+            Console.WriteLine($"📧 Reminder email would be sent to {userEmail} for todo: {todo.Title}");
         }
     }
 

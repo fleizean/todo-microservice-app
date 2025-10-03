@@ -1,280 +1,182 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface AppNotification {
-  id: string;
+  id: number;
+  userId: string;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  timestamp: Date;
-  read: boolean;
-  actionable?: boolean;
-  actionText?: string;
-  actionUrl?: string;
-  relatedEntityId?: string;
-  relatedEntityType?: 'todo' | 'user' | 'system';
+  type: NotificationType;
+  isRead: boolean;
+  createdAt: Date;
+  readAt?: Date;
+  data?: string;
+}
+
+export enum NotificationType {
+  TodoCreated = 1,
+  TodoCompleted = 2,
+  TodoDeleted = 3,
+  System = 4
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService {
-  private readonly API_URL = environment.apiUrl.auth;
-  private readonly NOTIFICATIONS_KEY = 'app_notifications';
-  private readonly MAX_NOTIFICATIONS = 100;
+  private readonly API_URL = `${environment.apiUrl.notification}/notification`;
   
   private notificationsSubject = new BehaviorSubject<AppNotification[]>([]);
   public notifications$ = this.notificationsSubject.asObservable();
+  
+  private unreadCountSubject = new BehaviorSubject<number>(0);
+  public unreadCount$ = this.unreadCountSubject.asObservable();
 
   constructor(private http: HttpClient) {
-    this.loadNotifications();
-    this.generateInitialNotifications();
+    // Initialize will be called when user is authenticated
   }
 
-  private loadNotifications(): void {
-    try {
-      const stored = localStorage.getItem(this.NOTIFICATIONS_KEY);
-      if (stored) {
-        const notifications = JSON.parse(stored);
-        // Convert timestamp strings back to Date objects
-        notifications.forEach((n: any) => {
-          n.timestamp = new Date(n.timestamp);
-        });
-        this.notificationsSubject.next(notifications);
-      }
-    } catch (error) {
-      console.error('Error loading notifications:', error);
+  initializeForUser(userId: string): void {
+    this.loadUserNotifications(userId);
+    this.loadUnreadCount(userId);
+  }
+
+  loadUserNotifications(userId: string, page: number = 1, pageSize: number = 20, isRead?: boolean, type?: NotificationType): Observable<AppNotification[]> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+    
+    if (isRead !== undefined) {
+      params = params.set('isRead', isRead.toString());
     }
-  }
-
-  private saveNotifications(notifications: AppNotification[]): void {
-    try {
-      localStorage.setItem(this.NOTIFICATIONS_KEY, JSON.stringify(notifications));
-    } catch (error) {
-      console.error('Error saving notifications:', error);
+    
+    if (type !== undefined) {
+      params = params.set('type', type.toString());
     }
+
+    return this.http.get<AppNotification[]>(`${this.API_URL}/${userId}`, { params });
   }
 
-  private generateInitialNotifications(): void {
-    const currentNotifications = this.notificationsSubject.value;
-    if (currentNotifications.length > 0) return;
-
-    const initialNotifications: AppNotification[] = [
-      {
-        id: this.generateId(),
-        title: 'Welcome to Tasky!',
-        message: 'Start organizing your tasks efficiently with our powerful task management system.',
-        type: 'info',
-        timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-        read: false,
-        actionable: true,
-        actionText: 'Create First Task',
-        actionUrl: '/dashboard/todos'
-      },
-      {
-        id: this.generateId(),
-        title: 'Task Reminder',
-        message: 'You have 3 tasks due today. Don\'t forget to complete them!',
-        type: 'warning',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-        read: false,
-        actionable: true,
-        actionText: 'View Tasks',
-        actionUrl: '/dashboard/todos'
-      },
-      {
-        id: this.generateId(),
-        title: 'Profile Updated',
-        message: 'Your profile information has been successfully updated.',
-        type: 'success',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-        read: true
-      },
-      {
-        id: this.generateId(),
-        title: 'Weekly Summary',
-        message: 'Great job! You completed 15 out of 18 tasks this week.',
-        type: 'info',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
-        read: true
-      },
-      {
-        id: this.generateId(),
-        title: 'New Feature Available',
-        message: 'Check out the new dark mode option in Settings!',
-        type: 'info',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3), // 3 days ago
-        read: false,
-        actionable: true,
-        actionText: 'Go to Settings',
-        actionUrl: '/dashboard/settings'
-      }
-    ];
-
-    this.notificationsSubject.next(initialNotifications);
-    this.saveNotifications(initialNotifications);
-  }
-
-  private generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  loadUnreadCount(userId: string): void {
+    this.http.get<{count: number}>(`${this.API_URL}/${userId}/unread-count`)
+      .subscribe(response => {
+        this.unreadCountSubject.next(response.count);
+      });
   }
 
   getNotifications(): Observable<AppNotification[]> {
     return this.notifications$;
   }
 
-  getCurrentNotifications(): AppNotification[] {
-    return this.notificationsSubject.value;
+  getUnreadCount(): Observable<number> {
+    return this.unreadCount$;
   }
 
-  getUnreadCount(): number {
-    return this.getCurrentNotifications().filter(n => !n.read).length;
+  markAsRead(notificationId: number): Observable<any> {
+    return this.http.post(`${this.API_URL}/${notificationId}/read`, {});
   }
 
-  getTodayCount(): number {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    return this.getCurrentNotifications().filter(n => {
-      const notificationDate = new Date(n.timestamp);
-      return notificationDate >= today && notificationDate < tomorrow;
-    }).length;
+  markAllAsRead(userId: string): Observable<any> {
+    return this.http.post(`${this.API_URL}/${userId}/read-all`, {});
   }
 
-  addNotification(notification: Omit<AppNotification, 'id' | 'timestamp'>): void {
-    const newNotification: AppNotification = {
-      ...notification,
-      id: this.generateId(),
-      timestamp: new Date()
-    };
+  deleteNotification(notificationId: number): Observable<any> {
+    return this.http.delete(`${this.API_URL}/${notificationId}`);
+  }
 
-    const currentNotifications = this.getCurrentNotifications();
-    const updatedNotifications = [newNotification, ...currentNotifications];
-    
-    // Keep only the latest MAX_NOTIFICATIONS
-    if (updatedNotifications.length > this.MAX_NOTIFICATIONS) {
-      updatedNotifications.splice(this.MAX_NOTIFICATIONS);
-    }
-
+  // Local state management methods
+  addNotificationToState(notification: AppNotification): void {
+    const currentNotifications = this.notificationsSubject.value;
+    const updatedNotifications = [notification, ...currentNotifications];
     this.notificationsSubject.next(updatedNotifications);
-    this.saveNotifications(updatedNotifications);
-  }
-
-  markAsRead(notificationId: string): void {
-    const currentNotifications = this.getCurrentNotifications();
-    const notification = currentNotifications.find(n => n.id === notificationId);
     
-    if (notification && !notification.read) {
-      notification.read = true;
-      this.notificationsSubject.next([...currentNotifications]);
-      this.saveNotifications(currentNotifications);
+    // Update unread count if notification is unread
+    if (!notification.isRead) {
+      const currentCount = this.unreadCountSubject.value;
+      this.unreadCountSubject.next(currentCount + 1);
     }
   }
 
-  markAllAsRead(): void {
-    const currentNotifications = this.getCurrentNotifications();
-    const updated = currentNotifications.map(n => ({ ...n, read: true }));
-    this.notificationsSubject.next(updated);
-    this.saveNotifications(updated);
+  updateNotificationInState(notificationId: number, updates: Partial<AppNotification>): void {
+    const currentNotifications = this.notificationsSubject.value;
+    const updatedNotifications = currentNotifications.map(notification => 
+      notification.id === notificationId 
+        ? { ...notification, ...updates }
+        : notification
+    );
+    this.notificationsSubject.next(updatedNotifications);
+    
+    // Update unread count if read status changed
+    if (updates.isRead !== undefined) {
+      const wasUnread = currentNotifications.find(n => n.id === notificationId)?.isRead === false;
+      const nowRead = updates.isRead === true;
+      
+      if (wasUnread && nowRead) {
+        const currentCount = this.unreadCountSubject.value;
+        this.unreadCountSubject.next(Math.max(0, currentCount - 1));
+      }
+    }
   }
 
-  deleteNotification(notificationId: string): void {
-    const currentNotifications = this.getCurrentNotifications();
-    const filtered = currentNotifications.filter(n => n.id !== notificationId);
-    this.notificationsSubject.next(filtered);
-    this.saveNotifications(filtered);
+  removeNotificationFromState(notificationId: number): void {
+    const currentNotifications = this.notificationsSubject.value;
+    const notification = currentNotifications.find(n => n.id === notificationId);
+    const filteredNotifications = currentNotifications.filter(n => n.id !== notificationId);
+    this.notificationsSubject.next(filteredNotifications);
+    
+    // Update unread count if deleted notification was unread
+    if (notification && !notification.isRead) {
+      const currentCount = this.unreadCountSubject.value;
+      this.unreadCountSubject.next(Math.max(0, currentCount - 1));
+    }
   }
 
-  clearAllRead(): void {
-    const currentNotifications = this.getCurrentNotifications();
-    const filtered = currentNotifications.filter(n => !n.read);
-    this.notificationsSubject.next(filtered);
-    this.saveNotifications(filtered);
+  // Utility methods
+  getNotificationTypeLabel(type: NotificationType): string {
+    switch (type) {
+      case NotificationType.TodoCreated:
+        return 'Todo Created';
+      case NotificationType.TodoCompleted:
+        return 'Todo Completed';
+      case NotificationType.TodoDeleted:
+        return 'Todo Deleted';
+      case NotificationType.System:
+        return 'System';
+      default:
+        return 'Unknown';
+    }
   }
 
-  clearAll(): void {
-    this.notificationsSubject.next([]);
-    this.saveNotifications([]);
+  getNotificationTypeIcon(type: NotificationType): string {
+    switch (type) {
+      case NotificationType.TodoCreated:
+        return 'plus';
+      case NotificationType.TodoCompleted:
+        return 'check';
+      case NotificationType.TodoDeleted:
+        return 'trash';
+      case NotificationType.System:
+        return 'info';
+      default:
+        return 'bell';
+    }
   }
 
-  // Notification generators for specific events
-  notifyTaskCompleted(taskTitle: string): void {
-    this.addNotification({
-      title: 'Task Completed',
-      message: `Great job! You've completed "${taskTitle}".`,
-      type: 'success',
-      read: false
-    });
-  }
-
-  notifyTaskOverdue(taskTitle: string, taskId: string): void {
-    this.addNotification({
-      title: 'Task Overdue',
-      message: `The task "${taskTitle}" is now overdue.`,
-      type: 'error',
-      read: false,
-      actionable: true,
-      actionText: 'Update Task',
-      actionUrl: `/dashboard/todos`,
-      relatedEntityId: taskId,
-      relatedEntityType: 'todo'
-    });
-  }
-
-  notifyTaskDueSoon(taskTitle: string, dueDate: Date, taskId: string): void {
-    const timeLeft = this.getTimeUntilDue(dueDate);
-    this.addNotification({
-      title: 'Task Due Soon',
-      message: `"${taskTitle}" is due ${timeLeft}.`,
-      type: 'warning',
-      read: false,
-      actionable: true,
-      actionText: 'View Task',
-      actionUrl: `/dashboard/todos`,
-      relatedEntityId: taskId,
-      relatedEntityType: 'todo'
-    });
-  }
-
-  notifyWeeklySummary(completedCount: number, totalCount: number): void {
-    const percentage = Math.round((completedCount / totalCount) * 100);
-    this.addNotification({
-      title: 'Weekly Summary',
-      message: `You completed ${completedCount} out of ${totalCount} tasks this week (${percentage}%).`,
-      type: 'info',
-      read: false,
-      actionable: true,
-      actionText: 'View Dashboard',
-      actionUrl: '/dashboard/home'
-    });
-  }
-
-  notifySettingsChanged(settingType: string): void {
-    this.addNotification({
-      title: 'Settings Updated',
-      message: `Your ${settingType} settings have been successfully updated.`,
-      type: 'success',
-      read: false
-    });
-  }
-
-  private getTimeUntilDue(dueDate: Date): string {
+  formatNotificationTime(createdAt: Date): string {
     const now = new Date();
-    const timeDiff = dueDate.getTime() - now.getTime();
-    
-    if (timeDiff <= 0) return 'now';
-    
-    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-    const days = Math.floor(hours / 24);
-    
-    if (days > 0) return `in ${days} day${days > 1 ? 's' : ''}`;
-    if (hours > 0) return `in ${hours} hour${hours > 1 ? 's' : ''}`;
+    const notificationDate = new Date(createdAt);
+    const timeDiff = now.getTime() - notificationDate.getTime();
     
     const minutes = Math.floor(timeDiff / (1000 * 60));
-    return `in ${minutes} minute${minutes > 1 ? 's' : ''}`;
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    
+    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    
+    return 'Just now';
   }
 }

@@ -31,15 +31,4 @@ http://localhost:4200
 | RabbitMQ | 15672 | Message queue management |
 | SQL Server | 1433 | Database |
 
-## Development
-
-```bash
-# Backend
-dotnet run --project backend/services/AuthService/Presentation/Tasky.AuthService.API
-dotnet run --project backend/services/TodoService/Presentation/Tasky.TodoService.API
-
-# Frontend
-cd frontend && npm start
-```
-
 This is a learning project to explore microservices patterns with .NET and Angular.

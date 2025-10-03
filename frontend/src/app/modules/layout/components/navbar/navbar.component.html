@@ -3,9 +3,7 @@
     <div class="flex items-center justify-between py-3.5 md:justify-start">
       <!-- Mobile Navigation Menu Button-->
       <div class="sm:order-1 md:hidden">
-        <button
-          (click)="toggleMobileMenu()"
-          type="button"
+        <button (click)="toggleMobileMenu()" type="button"
           class="bg-muted text-muted-foreground focus:ring-primary hover:bg-muted-foreground hover:text-muted inline-flex items-center justify-center rounded-md p-2 focus:outline-hidden focus:ring-2 focus:ring-inset"
           aria-expanded="false">
           <span class="sr-only">Open menu</span>
@@ -18,8 +16,7 @@
       <div class="flex items-center justify-start gap-3 sm:order-2 ltr:md:mr-10 rtl:md:ml-10 lg:hidden">
         <a routerLink="/dashboard">
           <img [src]="logoSrc" alt="Logo" class="h-24 w-24 object-contain" />
-        </a>  
-        
+        </a>
       </div>
 
       <!-- Desktop Menu -->
@@ -27,8 +24,78 @@
         <app-navbar-menu></app-navbar-menu>
       </div>
 
-      <!-- Profile menu -->
-      <div class="items-center justify-end sm:order-4 md:flex md:flex-1 lg:w-0">
+      <!-- Notifications and Profile menu -->
+      <div class="items-center justify-end space-x-4 sm:order-4 md:flex md:flex-1 lg:w-0">
+        <!-- Notification Bell -->
+        <div class="relative">
+          <button (click)="toggleNotificationDropdown()" type="button"
+            class="bg-background border-muted/20 relative rounded-lg border p-2 focus:outline-none">
+            <span class="sr-only">View notifications</span>
+            <div class="flex items-center justify-between">
+              <div class="bg-orange-100 dark:bg-orange-900/20 rounded-full p-2">
+                <svg-icon src="assets/icons/heroicons/outline/bell.svg"
+                  class="h-6 w-6 text-orange-600 dark:text-orange-400 flex-shrink-0"></svg-icon>
+              </div>
+            </div>
+            <!-- Notification badge -->
+            <span *ngIf="unreadCount > 0"
+              class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full min-w-[1.25rem]">
+              {{ unreadCount > 99 ? '99+' : unreadCount }}
+            </span>
+          </button>
+
+          <!-- Notification Dropdown -->
+          <div *ngIf="showNotificationDropdown"
+            class="absolute right-0 z-50 mt-2 w-80 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-800 dark:ring-gray-700"
+            role="menu">
+            <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-medium text-gray-900 dark:text-white">Notifications</h3>
+                <button *ngIf="unreadCount > 0" (click)="markAllAsRead()"
+                  class="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400">
+                  Mark all read
+                </button>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ unreadCount }} unread</p>
+            </div>
+
+            <div class="max-h-64 overflow-y-auto">
+              <div *ngIf="recentNotifications.length === 0"
+                class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
+                No notifications
+              </div>
+
+              <div *ngFor="let notification of recentNotifications; trackBy: trackByNotificationId"
+                class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                (click)="onNotificationClick(notification)">
+                <div class="flex items-start space-x-3">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 dark:text-white truncate leading-5">
+                      {{ notification.title }}
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate leading-4">
+                      {{ notification.message }}
+                    </p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 leading-4">
+                      {{ formatNotificationTime(notification.createdAt) }}
+                    </p>
+                  </div>
+                  <div *ngIf="!notification.isRead" class="flex-shrink-0">
+                    <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t border-gray-200 dark:border-gray-700">
+              <a routerLink="/dashboard/notifications" (click)="closeNotificationDropdown()"
+                class="block px-4 py-2 text-sm text-center text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700">
+                View all notifications
+              </a>
+            </div>
+          </div>
+        </div>
+
         <app-profile-menu></app-profile-menu>
       </div>
     </div>

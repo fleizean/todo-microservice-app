@@ -18,7 +18,10 @@ public class RabbitMQEventService : IEventService, IDisposable
         {
             var factory = new ConnectionFactory()
             {
-                Uri = new Uri(connectionString),
+                HostName = Environment.GetEnvironmentVariable("RabbitMQ__HostName") ?? "localhost",
+                Port = int.Parse(Environment.GetEnvironmentVariable("RabbitMQ__Port") ?? "5672"),
+                UserName = Environment.GetEnvironmentVariable("RabbitMQ__UserName") ?? "guest",
+                Password = Environment.GetEnvironmentVariable("RabbitMQ__Password") ?? "guest",
                 AutomaticRecoveryEnabled = true,
                 RequestedHeartbeat = TimeSpan.FromSeconds(60),
                 NetworkRecoveryInterval = TimeSpan.FromSeconds(10)
@@ -28,6 +31,7 @@ public class RabbitMQEventService : IEventService, IDisposable
             _channel = _connection.CreateModel();
             
             _channel.ExchangeDeclare(exchange: ExchangeName, type: ExchangeType.Direct, durable: true);
+            Console.WriteLine("RabbitMQ connection established successfully for TodoService");
         }
         catch (Exception ex)
         {

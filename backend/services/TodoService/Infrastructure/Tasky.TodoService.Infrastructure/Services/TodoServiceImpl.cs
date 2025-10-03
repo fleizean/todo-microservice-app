@@ -108,6 +108,14 @@ public class TodoServiceImpl : ITodoService
         todo.UpdatedAt = DateTime.UtcNow;
         
         var updatedTodo = await _todoRepository.UpdateAsync(todo);
+        
+        // Event publish
+        if (request.IsCompleted.HasValue && request.IsCompleted.Value)
+        {
+            var completedEvent = TodoMapper.ToCompletedEvent(updatedTodo);
+            await _eventService.PublishTodoCompletedEventAsync(completedEvent);
+        }
+        
         return TodoMapper.ToResponse(updatedTodo);
     }
 

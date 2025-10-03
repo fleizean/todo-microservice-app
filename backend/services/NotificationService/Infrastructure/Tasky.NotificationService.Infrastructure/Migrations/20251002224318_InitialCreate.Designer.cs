@@ -12,7 +12,7 @@ using Tasky.NotificationService.Infrastructure.Data;
 namespace Tasky.NotificationService.Infrastructure.Migrations
 {
     [DbContext(typeof(NotificationDbContext))]
-    [Migration("20251002140450_InitialCreate")]
+    [Migration("20251002224318_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -20,7 +20,7 @@ namespace Tasky.NotificationService.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.0")
+                .HasAnnotation("ProductVersion", "8.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);

@@ -72,6 +72,9 @@ builder.Services.AddSingleton<IEventService>(provider =>
     new RabbitMQEventService(builder.Configuration.GetConnectionString("RabbitMQ") ?? 
         throw new InvalidOperationException("RabbitMQ connection string is required")));
 
+// Background services
+builder.Services.AddHostedService<ReminderBackgroundService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
@@ -103,3 +106,39 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+public class ReminderBackgroundService : BackgroundService
+{
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<ReminderBackgroundService> _logger;
+
+    public ReminderBackgroundService(IServiceProvider serviceProvider, ILogger<ReminderBackgroundService> logger)
+    {
+        _serviceProvider = serviceProvider;
+        _logger = logger;
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        _logger.LogInformation("Reminder Background Service started");
+        
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var reminderService = scope.ServiceProvider.GetRequiredService<IReminderService>();
+                
+                await reminderService.ProcessPendingRemindersAsync();
+                
+                // Check every 30 seconds
+                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in reminder background service");
+                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken); // Wait longer on error
+            }
+        }
+    }
+}

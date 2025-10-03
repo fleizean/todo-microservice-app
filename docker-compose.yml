@@ -28,9 +28,9 @@ services:
     networks:
       - tasky-network
     healthcheck:
-      test: rabbitmq-diagnostics -q ping
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
       retries: 5
 
   # Auth Service
@@ -61,6 +61,12 @@ services:
       - ASPNETCORE_URLS=http://+:5002
       - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=TaskyTodoDB;User Id=sa;Password=reallyStrongPassword1!;Encrypt=False;TrustServerCertificate=True
       - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__UserName=guest
+      - RabbitMQ__Password=guest
+      - ConnectionStrings__RabbitMQ=amqp://guest:guest@rabbitmq:5672/
+      - Services__AuthService__BaseUrl=http://auth-service:5001
+      - Services__NotificationService__BaseUrl=http://notification-service:5003
     depends_on:
       - sqlserver
       - rabbitmq
@@ -71,13 +77,20 @@ services:
   notification-service:
     build:
       context: ./backend/services/NotificationService
-      dockerfile: Tasky.NotificationService/Dockerfile
+      dockerfile: Presentation/Tasky.NotificationService.API/Dockerfile
+    ports:
+      - "5003:5003"
     environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5003
       - RabbitMQ__HostName=rabbitmq
       - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=TaskyNotificationDb;User Id=sa;Password=reallyStrongPassword1!;Encrypt=False;TrustServerCertificate=True
     depends_on:
-      - sqlserver
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
+      sqlserver:
+        condition: service_started
+
     networks:
       - tasky-network
 
@@ -94,6 +107,7 @@ services:
     depends_on:
       - auth-service
       - todo-service
+      - notification-service
     networks:
       - tasky-network
 

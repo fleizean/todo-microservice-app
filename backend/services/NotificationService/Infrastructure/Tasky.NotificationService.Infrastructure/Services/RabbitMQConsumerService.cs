@@ -1,8 +1,8 @@
+using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using System.Text;
-using System.Text.Json;
 using Tasky.NotificationService.Application.DTOs.Events;
 using Tasky.NotificationService.Application.Services;
 
@@ -13,7 +13,7 @@ public class RabbitMQConsumerService : IMessageConsumerService
     private readonly ILogger<RabbitMQConsumerService> _logger;
     private readonly INotificationService _notificationService;
     private IConnection? _connection;
-    private IChannel? _channel;
+    private IModel? _channel;
     private const string ExchangeName = "tasky.events";
     private const string QueueName = "tasky.notifications";
 
@@ -27,10 +27,10 @@ public class RabbitMQConsumerService : IMessageConsumerService
 
     public async Task StartConsumingAsync(CancellationToken cancellationToken)
     {
-        var maxRetries = 10;
-        var retryDelay = TimeSpan.FromSeconds(5);
-        
-        for (int attempt = 1; attempt <= maxRetries; attempt++)
+        var maxRetries = 5;
+        var delay = TimeSpan.FromSeconds(5);
+
+        for (int i = 0; i < maxRetries; i++)
         {
             try
             {
@@ -39,64 +39,66 @@ public class RabbitMQConsumerService : IMessageConsumerService
                     HostName = Environment.GetEnvironmentVariable("RabbitMQ__HostName") ?? "localhost",
                     Port = int.Parse(Environment.GetEnvironmentVariable("RabbitMQ__Port") ?? "5672"),
                     UserName = Environment.GetEnvironmentVariable("RabbitMQ__UserName") ?? "guest",
-                    Password = Environment.GetEnvironmentVariable("RabbitMQ__Password") ?? "guest"
+                    Password = Environment.GetEnvironmentVariable("RabbitMQ__Password") ?? "guest",
+                    DispatchConsumersAsync = true
                 };
 
-                _logger.LogInformation("Attempting to connect to RabbitMQ (attempt {Attempt}/{MaxAttempts})", attempt, maxRetries);
-                _connection = await factory.CreateConnectionAsync();
-                _channel = await _connection.CreateChannelAsync();
+                _connection = factory.CreateConnection();
+                _channel = _connection.CreateModel();
 
-                // Exchange ve Queue setup
-                await _channel.ExchangeDeclareAsync(ExchangeName, ExchangeType.Direct, durable: true);
-                await _channel.QueueDeclareAsync(QueueName, durable: true, exclusive: false, autoDelete: false);
-                
-                // Multiple routing keys bind
-                await _channel.QueueBindAsync(QueueName, ExchangeName, "todo.created");
-                await _channel.QueueBindAsync(QueueName, ExchangeName, "todo.completed");
-                await _channel.QueueBindAsync(QueueName, ExchangeName, "todo.deleted");
+                _logger.LogInformation("Successfully connected to RabbitMQ.");
+
+                // Exchange ve Queue kurulumu
+                _channel.ExchangeDeclare(ExchangeName, ExchangeType.Direct, durable: true);
+                _channel.QueueDeclare(QueueName, durable: true, exclusive: false, autoDelete: false);
+
+                // Routing key'leri bağlama
+                _channel.QueueBind(QueueName, ExchangeName, "todo.created");
+                _channel.QueueBind(QueueName, ExchangeName, "todo.completed");
+                _channel.QueueBind(QueueName, ExchangeName, "todo.deleted");
 
                 var consumer = new AsyncEventingBasicConsumer(_channel);
-                consumer.ReceivedAsync += async (model, ea) =>
+                consumer.Received += async (model, ea) =>
                 {
                     try
                     {
                         var body = ea.Body.ToArray();
                         var message = Encoding.UTF8.GetString(body);
-                        
+
                         _logger.LogInformation("Received message: {Message}", message);
-                        
+
                         await ProcessMessageAsync(message, ea.RoutingKey);
-                        await _channel.BasicAckAsync(ea.DeliveryTag, false);
+                        _channel.BasicAck(ea.DeliveryTag, false);
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Error processing message");
-                        await _channel.BasicNackAsync(ea.DeliveryTag, false, true);
+                        _channel.BasicNack(ea.DeliveryTag, false, true); // Requeue on failure
                     }
                 };
 
-                await _channel.BasicConsumeAsync(QueueName, false, consumer);
-                
-                _logger.LogInformation("Successfully connected to RabbitMQ. Notification Service started listening...");
+                _channel.BasicConsume(QueueName, false, consumer);
+
+                _logger.LogInformation("Notification Service started. Listening to RabbitMQ...");
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     await Task.Delay(1000, cancellationToken);
                 }
-                return; // Success, exit retry loop
+                return; // Başarılı olursa döngüden çık
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to connect to RabbitMQ on attempt {Attempt}/{MaxAttempts}", attempt, maxRetries);
-                
-                if (attempt == maxRetries)
+                _logger.LogError(ex, "Error connecting to RabbitMQ. Retry {RetryCount}/{MaxRetries}...", i + 1, maxRetries);
+                if (i < maxRetries - 1)
                 {
-                    _logger.LogError(ex, "Failed to connect to RabbitMQ after {MaxAttempts} attempts", maxRetries);
-                    throw;
+                    await Task.Delay(delay, cancellationToken);
                 }
-                
-                _logger.LogInformation("Retrying in {Delay} seconds...", retryDelay.TotalSeconds);
-                await Task.Delay(retryDelay, cancellationToken);
+                else
+                {
+                    _logger.LogError("Could not connect to RabbitMQ after multiple retries. The service will shut down.");
+                    throw; // Son denemede de başarısız olursa hatayı fırlat
+                }
             }
         }
     }
@@ -150,14 +152,16 @@ public class RabbitMQConsumerService : IMessageConsumerService
         }
     }
 
-    public async Task StopConsumingAsync()
+    public Task StopConsumingAsync()
     {
         _logger.LogInformation("Stopping Notification Service...");
-        
+
         if (_channel != null)
-            await _channel.CloseAsync();
-            
+            _channel.Close();
+
         if (_connection != null)
-            await _connection.CloseAsync();
+            _connection.Close();
+
+        return Task.CompletedTask;
     }
 }

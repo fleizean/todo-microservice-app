@@ -9,11 +9,6 @@
     </div>
   </div>
   <div class="inline-block space-x-4">
-    <button
-      (click)="clearAllRead()"
-      class="bg-muted text-muted-foreground hover:text-foreground flex-none rounded-md px-4 py-2.5 text-xs font-semibold">
-      Clear Read
-    </button>
     <button 
       (click)="markAllAsRead()"
       [disabled]="unreadCount === 0"
@@ -67,16 +62,19 @@
     </div>
   </div>
 
-  <!-- Today's Notifications Card -->
+  <!-- Type Filter Card -->
   <div class="bg-background border-muted/20 rounded-xl border p-6">
     <div class="flex items-center justify-between">
-      <div>
-        <p class="text-muted-foreground text-sm font-medium">Today</p>
-        <p class="text-foreground text-2xl font-bold">{{ getTodayCount() }}</p>
-        <p class="text-muted-foreground text-xs">Recent activity</p>
-      </div>
-      <div class="bg-purple-100 dark:bg-purple-900/20 rounded-full p-3">
-        <svg-icon src="assets/icons/heroicons/outline/calendar.svg" class="h-24 w-24 text-purple-600 dark:text-purple-400"></svg-icon>
+      <div class="w-full">
+        <p class="text-muted-foreground text-sm font-medium mb-2">Filter by Type</p>
+        <select
+          [(ngModel)]="typeFilter"
+          (ngModelChange)="onTypeFilterChange()"
+          class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+          <option *ngFor="let type of getNotificationTypes()" [value]="type.value">
+            {{ type.label }}
+          </option>
+        </select>
       </div>
     </div>
   </div>
@@ -87,19 +85,19 @@
   <div class="flex items-center space-x-2 p-2">
     <button 
       [class]="filter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'"
-      (click)="filter = 'all'"
+      (click)="filter = 'all'; onFilterChange()"
       class="rounded-md px-3 py-1 text-xs font-medium transition-colors">
       All ({{ notifications.length }})
     </button>
     <button 
       [class]="filter === 'unread' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'"
-      (click)="filter = 'unread'"
+      (click)="filter = 'unread'; onFilterChange()"
       class="rounded-md px-3 py-1 text-xs font-medium transition-colors">
       Unread ({{ unreadCount }})
     </button>
     <button 
       [class]="filter === 'read' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'"
-      (click)="filter = 'read'"
+      (click)="filter = 'read'; onFilterChange()"
       class="rounded-md px-3 py-1 text-xs font-medium transition-colors">
       Read ({{ notifications.length - unreadCount }})
     </button>
@@ -139,17 +137,17 @@
             <div class="text-muted-foreground text-xs">You're all caught up!</div>
           </td>
         </tr>
-        <tr *ngFor="let notification of filteredNotifications"
+        <tr *ngFor="let notification of filteredNotifications; trackBy: trackByNotificationId"
             class="hover:bg-card/50 transition-colors"
-            [ngClass]="{'bg-primary/5': !notification.read}">
+            [ngClass]="{'bg-primary/5': !notification.isRead}">
           <td class="border-muted/20 border-b py-4">
             <div class="flex items-center space-x-2">
               <span 
-                *ngIf="!notification.read"
+                *ngIf="!notification.isRead"
                 class="w-2 h-2 bg-primary rounded-full animate-pulse"
               ></span>
               <span 
-                *ngIf="notification.read"
+                *ngIf="notification.isRead"
                 class="w-2 h-2 bg-muted rounded-full"
               ></span>
             </div>
@@ -159,15 +157,15 @@
               class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
               [class]="getTypeClass(notification.type)"
             >
-              <span class="mr-1">{{getTypeIcon(notification.type)}}</span>
-              {{ notification.type }}
+              <svg-icon [src]="'assets/icons/heroicons/outline/' + getTypeIcon(notification.type) + '.svg'" class="w-3 h-3 mr-1 flex-shrink-0"></svg-icon>
+              {{ getTypeLabel(notification.type) }}
             </span>
           </td>
           <td class="border-muted/20 border-b py-4">
             <div 
               class="font-medium"
-              [class.text-foreground]="!notification.read"
-              [class.text-muted-foreground]="notification.read"
+              [class.text-foreground]="!notification.isRead"
+              [class.text-muted-foreground]="notification.isRead"
             >
              {{ notification.title }}
             </div>
@@ -175,41 +173,33 @@
           <td class="border-muted/20 border-b py-4">
             <div 
               class="text-sm max-w-xs truncate"
-              [class.text-foreground]="!notification.read"
-              [class.text-muted-foreground]="notification.read"
+              [class.text-foreground]="!notification.isRead"
+              [class.text-muted-foreground]="notification.isRead"
             >
               {{ notification.message }}
             </div>
           </td>
           <td class="border-muted/20 border-b py-4">
             <div class="text-muted-foreground text-sm">
-              {{ formatTimestamp(notification.timestamp) }}
+              {{ formatTimestamp(notification.createdAt) }}
             </div>
           </td>
           <td class="border-muted/20 border-b py-4">
             <div class="flex items-center space-x-2">
               <button
-                *ngIf="notification.actionable && notification.actionText"
-                (click)="onAction(notification)"
-                class="text-primary hover:text-primary/80 text-xs font-medium underline"
-                [title]="notification.actionText"
-              >
-                {{ notification.actionText }}
-              </button>
-              <button
-                *ngIf="!notification.read"
+                *ngIf="!notification.isRead"
                 (click)="markAsRead(notification)"
                 class="text-muted-foreground hover:text-foreground transition-colors"
                 title="Mark as read"
               >
-                <svg-icon src="assets/icons/heroicons/outline/check.svg" class="h-4 w-4"></svg-icon>
+                <svg-icon src="assets/icons/heroicons/outline/check.svg" class="h-4 w-4 flex-shrink-0"></svg-icon>
               </button>
               <button
                 (click)="deleteNotification(notification.id)"
                 class="text-muted-foreground hover:text-destructive transition-colors"
                 title="Delete notification"
               >
-                <svg-icon src="assets/icons/heroicons/outline/x.svg" class="h-4 w-4"></svg-icon>
+                <svg-icon src="assets/icons/heroicons/outline/x.svg" class="h-4 w-4 flex-shrink-0"></svg-icon>
               </button>
             </div>
           </td>

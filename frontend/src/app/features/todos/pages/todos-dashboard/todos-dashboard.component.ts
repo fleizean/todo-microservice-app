@@ -5,11 +5,12 @@ import { TodoService } from '../../services/todo.service';
 import { Todo, CreateTodoRequest, TodoPriority, TodoCategory, PriorityLabels, CategoryLabels } from '../../models/todo.model';
 import { AuthService } from '../../../../core/services/auth.service';
 import { AngularSvgIconModule } from 'angular-svg-icon';
+import { DateTimePickerComponent } from '../../../../shared/components/date-time-picker/date-time-picker.component';
 
 @Component({
   selector: 'app-todos-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, AngularSvgIconModule],
+  imports: [CommonModule, FormsModule, AngularSvgIconModule, DateTimePickerComponent],
   templateUrl: './todos-dashboard.component.html',
   styleUrls: ['./todos-dashboard.component.css']
 })

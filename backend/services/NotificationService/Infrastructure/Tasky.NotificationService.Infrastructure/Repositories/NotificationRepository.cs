@@ -28,12 +28,15 @@ public class NotificationRepository : INotificationRepository
             .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
     }
 
-    public async Task<List<Notification>> GetByUserIdAsync(string userId, int skip, int take, bool? isRead = null)
+    public async Task<List<Notification>> GetByUserIdAsync(string userId, int skip, int take, bool? isRead = null, int? type = null)
     {
         var query = _context.Notifications.Where(n => n.UserId == userId);
         
         if (isRead.HasValue)
             query = query.Where(n => n.IsRead == isRead.Value);
+            
+        if (type.HasValue)
+            query = query.Where(n => (int)n.Type == type.Value);
             
         return await query
             .OrderByDescending(n => n.CreatedAt)
@@ -79,5 +82,20 @@ public class NotificationRepository : INotificationRepository
         
         await _context.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<Notification?> GetByIdAsync(int id)
+    {
+        return await _context.Notifications.FindAsync(id);
+    }
+
+    public async Task DeleteAsync(int notificationId)
+    {
+        var notification = await _context.Notifications.FindAsync(notificationId);
+        if (notification != null)
+        {
+            _context.Notifications.Remove(notification);
+            await _context.SaveChangesAsync();
+        }
     }
 }

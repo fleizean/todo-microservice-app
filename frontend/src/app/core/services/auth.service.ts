@@ -16,6 +16,7 @@ export class AuthService {
 
   private currentUserSubject = new BehaviorSubject<AppUser | null>(this.getUserData());
   public currentUser$ = this.currentUserSubject.asObservable();
+  public user$ = this.currentUser$; // Alias for compatibility
 
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.hasToken());
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
@@ -70,7 +71,39 @@ export class AuthService {
 
   getUserData(): AppUser | null {
     const userData = localStorage.getItem(this.USER_KEY);
-    return userData ? JSON.parse(userData) : null;
+    if (!userData) return null;
+    
+    const user = JSON.parse(userData);
+    
+    // If user doesn't have ID, try to get it from JWT token
+    if (!user.id) {
+      const token = this.getToken();
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          user.id = payload.nameid; // JWT'de user ID 'nameid' field'inde
+        } catch (error) {
+          console.error('Failed to decode JWT token:', error);
+        }
+      }
+    }
+    
+    return user;
+  }
+
+  getCurrentUser(): AppUser | null {
+    // Get from BehaviorSubject first, but ensure ID is populated from JWT if missing
+    let user = this.currentUserSubject.value;
+    
+    // If user exists but no ID, get it from localStorage which now includes JWT decode
+    if (user && !user.id) {
+      user = this.getUserData();
+      if (user) {
+        this.currentUserSubject.next(user); // Update BehaviorSubject with complete user data
+      }
+    }
+    
+    return user;
   }
 
   updateUserData(userData: Partial<AppUser>): void {
@@ -96,10 +129,11 @@ export class AuthService {
 
   private setAuthData(authResponse: AuthResponse): void {
     const appUser: AppUser = {
+      id: authResponse.id,
       username: authResponse.username,
       email: authResponse.email,
       fullName: authResponse.fullName,
-      avatarUrl: authResponse.avatarUrl // Backend'den avatarUrl geliyorsa ekleyin
+      avatarUrl: authResponse.avatarUrl
     };
     
     localStorage.setItem(this.TOKEN_KEY, authResponse.token);

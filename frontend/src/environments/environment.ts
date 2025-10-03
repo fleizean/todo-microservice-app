@@ -6,7 +6,11 @@ export const environment = {
   production: false,
   apiUrl: {
     auth: 'http://localhost:5001/api/auth',
-    todo: 'http://localhost:5002/api/todos'
+    todo: 'http://localhost:5002/api/todos',
+    notification: 'http://localhost:5003/api'
+  },
+  signalR: {
+    notificationHub: 'http://localhost:5003/notificationHub'
   }
 };
 
